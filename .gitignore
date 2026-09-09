@@ -1,0 +1,33 @@
+# Dependencias
+/vendor/
+node_modules/
+
+# Variables de entorno y configuración sensible
+.env
+.env.local
+*.env
+!.env.example
+
+# Datos persistentes de Docker si se montan como carpeta local
+docker/data/
+docker/mysql/
+*.sql
+*.sql.bak
+
+# Logs
+*.log
+storage/logs/
+logs/
+
+# Uploads/evidencias generadas en desarrollo (ajusta la ruta real cuando exista)
+uploads/
+storage/uploads/
+
+# Archivos del sistema operativo
+Thumbs.db
+.DS_Store
+
+# Archivos de editor/IDE
+.vscode/
+.idea/
+*.swp
