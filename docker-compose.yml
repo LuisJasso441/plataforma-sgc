@@ -4,6 +4,7 @@ services:
     container_name: sga_web
     ports:
       - "8090:80"          # navegas en http://localhost:8090
+      - "5173:5173"        # servidor de Vite (hot-reload en desarrollo)
     volumes:
       - ./src:/var/www/html
     depends_on:
