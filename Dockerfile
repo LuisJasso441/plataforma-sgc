@@ -34,5 +34,9 @@ COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.con
 # --- Composer: sin límite de tiempo (mount lento en Windows) ---
 ENV COMPOSER_PROCESS_TIMEOUT=0
 
+# --- Alinear www-data con el UID/GID del usuario de WSL (1000) ---
+RUN groupmod -g 1000 www-data \
+    && usermod -u 1000 -g 1000 www-data
+
 # --- Zona horaria ---
 ENV TZ=America/Mexico_City
