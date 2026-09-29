@@ -19,4 +19,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
 
+Route::middleware(['auth', 'admin'])->group(function () {
+    Volt::route('usuarios', 'usuarios.index')->name('usuarios.index');
+});
+
 require __DIR__.'/auth.php';
