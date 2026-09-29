@@ -15,10 +15,25 @@
                 <flux:navlist.group heading="Platform" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>Dashboard</flux:navlist.item>
 
-                    @if (auth()->user()->isAdmin())
-                        <flux:navlist.item icon="users" :href="route('usuarios.index')" :current="request()->routeIs('usuarios.*')" wire:navigate>Usuarios</flux:navlist.item>
-                    @endif
+                    {{-- Módulos del SGA: se muestran solo si el usuario tiene acceso y la ruta existe --}}
+                    @foreach (\App\Models\Module::where('active', true)->orderBy('order')->get() as $module)
+                        @if (auth()->user()->canRead($module->key) && \Illuminate\Support\Facades\Route::has($module->key . '.index'))
+                            <flux:navlist.item
+                                icon="clipboard-document-list"
+                                :href="route($module->key . '.index')"
+                                :current="request()->routeIs($module->key . '.*')"
+                                wire:navigate>
+                                {{ $module->name }}
+                            </flux:navlist.item>
+                        @endif
+                    @endforeach
                 </flux:navlist.group>
+
+                @if (auth()->user()->isAdmin())
+                    <flux:navlist.group heading="Administración" class="grid">
+                        <flux:navlist.item icon="users" :href="route('usuarios.index')" :current="request()->routeIs('usuarios.*')" wire:navigate>Usuarios</flux:navlist.item>
+                    </flux:navlist.group>
+                @endif
             </flux:navlist>
 
             <flux:spacer />
