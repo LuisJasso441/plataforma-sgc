@@ -25,7 +25,8 @@ RUN install-php-extensions \
         mbstring \
         xml \
         bcmath \
-        zip
+        zip \
+        intl
 
 # --- Apache: mod_rewrite + DocumentRoot a /public ---
 RUN a2enmod rewrite

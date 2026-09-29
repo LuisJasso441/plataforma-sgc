@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -59,6 +60,16 @@ class User extends Authenticatable // implements MustVerifyEmail
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Módulos a los que el usuario tiene acceso, con sus niveles de permiso.
+     */
+    public function modules(): BelongsToMany
+    {
+        return $this->belongsToMany(Module::class)
+            ->withPivot(['can_read', 'can_create', 'can_edit'])
+            ->withTimestamps();
     }
 
     /**

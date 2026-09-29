@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Department;
+use App\Models\Module;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -48,6 +49,17 @@ class SgaBaseSeeder extends Seeder
                 'role'          => 'admin',
                 'department_id' => $sistemas?->id,
                 'active'        => true,
+            ]
+        );
+
+        // 3) Catálogo de módulos (arrancamos con No Conformidad)
+        Module::firstOrCreate(
+            ['key' => 'no-conformidad'],
+            [
+                'name'        => 'No Conformidad',
+                'description' => 'Registro y seguimiento de no conformidades del SGA',
+                'active'      => true,
+                'order'       => 1,
             ]
         );
     }
