@@ -21,6 +21,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth', 'admin'])->group(function () {
     Volt::route('usuarios', 'usuarios.index')->name('usuarios.index');
+    Volt::route('usuarios/crear', 'usuarios.form')->name('usuarios.create');
+    Volt::route('usuarios/{user}/editar', 'usuarios.form')->name('usuarios.edit');
 });
 
 require __DIR__.'/auth.php';

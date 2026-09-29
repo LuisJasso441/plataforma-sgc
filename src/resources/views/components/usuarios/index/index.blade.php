@@ -4,7 +4,7 @@
             <flux:heading size="xl">Usuarios</flux:heading>
             <flux:subheading>Gestión de usuarios y accesos de la plataforma</flux:subheading>
         </div>
-        <flux:button variant="primary" icon="plus" disabled>
+        <flux:button variant="primary" icon="plus" :href="route('usuarios.create')" wire:navigate>
             Nuevo usuario
         </flux:button>
     </div>
@@ -26,6 +26,7 @@
                     <th class="px-4 py-3 font-medium">Rol</th>
                     <th class="px-4 py-3 font-medium">Departamento</th>
                     <th class="px-4 py-3 font-medium">Estado</th>
+                    <th class="px-4 py-3 font-medium text-right">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -55,10 +56,16 @@
                                 <flux:badge size="sm" color="zinc">Inactivo</flux:badge>
                             @endif
                         </td>
+                        <td class="px-4 py-3 text-right">
+                            <flux:button size="sm" variant="ghost" icon="pencil-square"
+                                :href="route('usuarios.edit', $user)" wire:navigate>
+                                Editar
+                            </flux:button>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-4 py-8 text-center text-zinc-500">
+                        <td colspan="6" class="px-4 py-8 text-center text-zinc-500">
                             No se encontraron usuarios.
                         </td>
                     </tr>
