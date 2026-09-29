@@ -17,6 +17,21 @@ new #[Layout('components.layouts.app')] #[Title('Usuarios')] class extends Compo
         $this->resetPage();
     }
 
+    public function toggleActive(User $user): void
+    {
+        // Evita que un admin se desactive a sí mismo y se quede fuera
+        if ($user->id === auth()->id()) {
+            session()->flash('error', 'No puedes desactivar tu propia cuenta.');
+            return;
+        }
+
+        $user->update(['active' => ! $user->active]);
+
+        session()->flash('status', $user->active
+            ? "Usuario \"{$user->name}\" activado."
+            : "Usuario \"{$user->name}\" desactivado.");
+    }
+
     public function with(): array
     {
         $users = User::query()

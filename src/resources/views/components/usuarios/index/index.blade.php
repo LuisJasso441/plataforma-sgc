@@ -1,4 +1,11 @@
 <div>
+    @if (session('status'))
+        <flux:callout variant="success" class="mb-4" icon="check-circle" :heading="session('status')" />
+    @endif
+    @if (session('error'))
+        <flux:callout variant="danger" class="mb-4" icon="exclamation-triangle" :heading="session('error')" />
+    @endif
+
     <div class="flex items-center justify-between mb-6">
         <div>
             <flux:heading size="xl">Usuarios</flux:heading>
@@ -57,10 +64,25 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 text-right">
-                            <flux:button size="sm" variant="ghost" icon="pencil-square"
-                                :href="route('usuarios.edit', $user)" wire:navigate>
-                                Editar
-                            </flux:button>
+                            <div class="flex items-center justify-end gap-1">
+                                <flux:button size="sm" variant="ghost" icon="pencil-square"
+                                    :href="route('usuarios.edit', $user)" wire:navigate>
+                                    Editar
+                                </flux:button>
+
+                                @if ($user->active)
+                                    <flux:button size="sm" variant="ghost" icon="user-minus"
+                                        wire:click="toggleActive({{ $user->id }})"
+                                        wire:confirm="¿Desactivar a {{ $user->name }}? No podrá iniciar sesión.">
+                                        Desactivar
+                                    </flux:button>
+                                @else
+                                    <flux:button size="sm" variant="ghost" icon="user-plus"
+                                        wire:click="toggleActive({{ $user->id }})">
+                                        Activar
+                                    </flux:button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
