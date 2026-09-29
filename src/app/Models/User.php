@@ -89,6 +89,56 @@ class User extends Authenticatable // implements MustVerifyEmail
     }
 
     /**
+     * Comprueba si el usuario tiene cierto nivel de permiso sobre un módulo.
+     * Los administradores (Sistemas) tienen acceso total por su rol.
+     *
+     * @param  string  $moduleKey  clave estable del módulo (ej. 'no-conformidad')
+     * @param  string  $ability    'read' | 'create' | 'edit'
+     */
+    public function hasModuleAccess(string $moduleKey, string $ability = 'read'): bool
+    {
+        // Un usuario inactivo no tiene acceso a nada
+        if (! $this->active) {
+            return false;
+        }
+
+        // El admin puede todo, sin mirar la matriz
+        if ($this->isAdmin()) {
+            return true;
+        }
+
+        $module = $this->modules->firstWhere('key', $moduleKey);
+
+        if (! $module) {
+            return false; // Sin fila = sin acceso
+        }
+
+        return match ($ability) {
+            'create' => (bool) $module->pivot->can_create,
+            'edit'   => (bool) $module->pivot->can_edit,
+            default  => (bool) $module->pivot->can_read,
+        };
+    }
+
+    /**
+     * Atajos legibles.
+     */
+    public function canRead(string $moduleKey): bool
+    {
+        return $this->hasModuleAccess($moduleKey, 'read');
+    }
+
+    public function canCreate(string $moduleKey): bool
+    {
+        return $this->hasModuleAccess($moduleKey, 'create');
+    }
+
+    public function canEdit(string $moduleKey): bool
+    {
+        return $this->hasModuleAccess($moduleKey, 'edit');
+    }
+
+    /**
      * Get the user's initials
      */
     public function initials(): string
