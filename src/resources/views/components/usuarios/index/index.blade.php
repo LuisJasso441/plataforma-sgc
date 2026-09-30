@@ -50,7 +50,7 @@
                                 'calidad' => 'blue',
                                 default => 'zinc',
                             }">
-                                {{ ucfirst($user->role) }}
+                                {{ $user->roleLabel() }}
                             </flux:badge>
                         </td>
                         <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">

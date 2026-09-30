@@ -88,6 +88,15 @@ class User extends Authenticatable // implements MustVerifyEmail
         return $this->role === 'calidad';
     }
 
+    public function roleLabel(): string
+    {
+        return match ($this->role) {
+            'admin'   => 'Soporte',
+            'calidad' => 'Calidad',
+            default   => 'Jefe de Departamento',
+        };
+    }
+
     /**
      * Comprueba si el usuario tiene cierto nivel de permiso sobre un módulo.
      * Los administradores (Sistemas) tienen acceso total por su rol.
@@ -148,4 +157,15 @@ class User extends Authenticatable // implements MustVerifyEmail
             ->map(fn (string $name) => Str::of($name)->substr(0, 1))
             ->implode('');
     }
+
+    public function headedDepartments(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Department::class, 'head_user_id');
+    }
+
+    public function isDepartmentHead(): bool
+    {
+        return $this->headedDepartments()->exists();
+    }
+
 }

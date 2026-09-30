@@ -15,9 +15,9 @@
 
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <flux:select wire:model.live="role" label="Rol">
-                <flux:select.option value="user">Usuario</flux:select.option>
+                <flux:select.option value="user">Jefe de Departamento</flux:select.option>
                 <flux:select.option value="calidad">Calidad</flux:select.option>
-                <flux:select.option value="admin">Administrador (Sistemas)</flux:select.option>
+                <flux:select.option value="admin">Soporte</flux:select.option>
             </flux:select>
 
             <flux:select wire:model="department_id" label="Departamento" placeholder="Selecciona un área...">
@@ -53,7 +53,7 @@
         {{-- Matriz de permisos: solo para roles que no son admin --}}
         @if ($role === 'admin')
             <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-4 text-sm text-zinc-600 dark:text-zinc-400">
-                Los administradores (Sistemas) tienen acceso completo a todos los módulos por su rol. No requieren asignación de permisos.
+                El personal de Soporte tiene acceso completo a todos los módulos por su rol. No requiere asignación de permisos.
             </div>
         @else
             <div>

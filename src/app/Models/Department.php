@@ -10,6 +10,7 @@ class Department extends Model
     protected $fillable = [
         'name',
         'active',
+        'head_user_id',
     ];
 
     protected function casts(): array
@@ -23,4 +24,10 @@ class Department extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function head(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'head_user_id');
+    }
+
 }
