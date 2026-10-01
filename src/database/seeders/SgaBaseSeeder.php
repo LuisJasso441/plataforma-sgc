@@ -12,30 +12,24 @@ class SgaBaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1) Catálogo de departamentos / áreas
+        // 1) Catálogo de departamentos (reset limpio — entorno de desarrollo)
+        // Al borrar, los usuarios de un depto eliminado quedan con department_id = null (nullOnDelete).
+        Department::whereNotNull('parent_id')->delete(); // primero subdepartamentos
+        Department::query()->delete();                   // luego el resto
+
         $departamentos = [
-            'ALMACÉN DE REFACCIONES',
-            'ALMACÉN DE RESIDUOS',
-            'CALIDAD',
-            'COMERCIAL',
-            'CONTABILIDAD',
-            'CRÉDITO Y COBRANZA',
-            'FACTURACIÓN',
-            'GESTIÓN DE TALENTO HUMANO',
-            'LABORATORIO',
-            'LOGÍSTICA',
-            'MANTENIMIENTO',
-            'NORMATIVIDAD',
-            'PTAR',
-            'SEGURIDAD',
-            'SISTEMAS',
-            'TESORERÍA',
-            'VENTAS',
+            'ALMACÉN', 'CALIDAD', 'COMERCIAL', 'CONTABILIDAD', 'DIRECCIÓN',
+            'LABORATORIO', 'LOGÍSTICA', 'MANTENIMIENTO', 'NORMATIVIDAD', 'PTAR',
+            'SEGURIDAD', 'SISTEMAS', 'TALENTO HUMANO',
         ];
 
         foreach ($departamentos as $nombre) {
-            Department::firstOrCreate(['name' => $nombre]);
+            Department::create(['name' => $nombre, 'active' => true]);
         }
+
+        // VENTAS es subdepartamento de COMERCIAL (comparte jefe)
+        $comercial = Department::where('name', 'COMERCIAL')->first();
+        Department::create(['name' => 'VENTAS', 'active' => true, 'parent_id' => $comercial?->id]);
 
         // 2) Usuario administrador (Sistemas)
         $sistemas = Department::where('name', 'SISTEMAS')->first();
@@ -62,5 +56,8 @@ class SgaBaseSeeder extends Seeder
                 'order'       => 1,
             ]
         );
+
+        // 4) Catálogos del módulo No Conformidad (procesos y subprocesos)
+        $this->call(NcCatalogSeeder::class);
     }
 }

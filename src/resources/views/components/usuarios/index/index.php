@@ -27,6 +27,8 @@ new #[Layout('components.layouts.app')] #[Title('Usuarios')] class extends Compo
 
         $user->update(['active' => ! $user->active]);
 
+        \App\Models\Department::syncHeadFor($user->fresh());
+
         session()->flash('status', $user->active
             ? "Usuario \"{$user->name}\" activado."
             : "Usuario \"{$user->name}\" desactivado.");

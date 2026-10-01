@@ -168,4 +168,30 @@ class User extends Authenticatable // implements MustVerifyEmail
         return $this->headedDepartments()->exists();
     }
 
+    /**
+     * IDs de departamentos cuya información ve este usuario:
+     * su propio depto + los que encabeza + los subdepartamentos de éstos.
+     * Ej.: el jefe de COMERCIAL también ve VENTAS.
+     *
+     * @return list<int>
+     */
+    public function visibleDepartmentIds(): array
+    {
+        return once(function () {
+            $headed = $this->headedDepartments()->pluck('id');
+
+            $children = $headed->isEmpty()
+                ? collect()
+                : Department::whereIn('parent_id', $headed)->pluck('id');
+
+            return collect([$this->department_id])
+                ->merge($headed)
+                ->merge($children)
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        });
+    }
+
 }

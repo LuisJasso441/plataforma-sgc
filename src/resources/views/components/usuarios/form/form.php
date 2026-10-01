@@ -131,6 +131,8 @@ new #[Layout('components.layouts.app')] #[Title('Usuario')] class extends Compon
         // Sincronizar la matriz de permisos (solo para roles no-admin)
         $this->syncPermissions();
 
+        \App\Models\Department::syncHeadFor($this->user->fresh());
+
         session()->flash('status', $esNuevo ? 'Usuario creado.' : 'Usuario actualizado.');
 
         $this->redirect(route('usuarios.index'), navigate: true);
