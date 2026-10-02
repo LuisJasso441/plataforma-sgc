@@ -71,7 +71,10 @@
                 @forelse ($ncs as $nc)
                     <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50 align-top">
                         <td class="px-4 py-3">
-                            <div class="font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">{{ $nc->folio }}</div>
+                            <a href="{{ route('no-conformidad.show', $nc) }}" wire:navigate
+                                class="font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap hover:underline">
+                                {{ $nc->folio }}
+                            </a>
                             <div class="text-zinc-500 text-xs whitespace-nowrap">{{ $nc->stage->label() }}</div>
                         </td>
                         <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
@@ -99,6 +102,11 @@
                             <flux:badge size="sm" :color="$nc->status->color()">{{ $nc->status->label() }}</flux:badge>
                         </td>
                         <td class="px-4 py-3 text-right">
+                            <flux:button size="sm" variant="ghost" icon="eye"
+                                :href="route('no-conformidad.show', $nc)" wire:navigate>
+                                Ver
+                            </flux:button>
+
                             @can('correct', $nc)
                                 <flux:button size="sm" variant="ghost" icon="pencil-square"
                                     :href="route('no-conformidad.edit', $nc)" wire:navigate>

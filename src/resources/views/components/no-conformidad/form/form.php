@@ -103,7 +103,7 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
 
         session()->flash('status', $message);
 
-        $this->redirect(route('no-conformidad.index'), navigate: true);
+        $this->redirect(route('no-conformidad.show', $nc ?? $this->nc), navigate: true);
     }
 
     public function with(): array

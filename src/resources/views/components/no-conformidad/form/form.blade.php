@@ -4,9 +4,13 @@
             {{ $nc ? "No Conformidad {$nc->folio}" : 'Nueva No Conformidad' }}
         </flux:heading>
         <flux:subheading>
-            {{ $nc
-                ? 'Corrige los datos de la solicitud'
-                : 'Registra la solicitud. Calidad la revisará antes de convocar al líder de solución.' }}
+            @if (! $nc)
+                Registra la solicitud. Calidad la revisará antes de convocar al líder de solución.
+            @elseif ($nc->stage === App\Enums\NcStage::DevueltaEmisor)
+                Corrige los datos según el motivo indicado por Calidad y reenvía la solicitud.
+            @else
+                Edición de los datos de la solicitud · Etapa actual: {{ $nc->stage->label() }}
+            @endif
         </flux:subheading>
     </div>
 

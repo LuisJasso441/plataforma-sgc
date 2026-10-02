@@ -30,4 +30,16 @@ class NcLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function eventLabel(): string
+    {
+        return match ($this->event) {
+            'creada'    => 'Solicitud registrada',
+            'corregida' => 'Solicitud corregida y reenviada',
+            'editada'   => 'Datos editados',
+            'aceptada'  => 'Aceptada por Calidad',
+            'devuelta'  => 'Devuelta al emisor',
+            default     => ucfirst(str_replace('_', ' ', $this->event)),
+        };
+    }
 }

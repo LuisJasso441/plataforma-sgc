@@ -32,6 +32,7 @@ Route::middleware(['auth', 'module:no-conformidad'])
     ->group(function () {
         Volt::route('/', 'no-conformidad.index')->name('index');
         Volt::route('crear', 'no-conformidad.form')->name('create');
+        Volt::route('{nonConformity}', 'no-conformidad.show')->name('show')->whereNumber('nonConformity');
         Volt::route('{nonConformity}/editar', 'no-conformidad.form')->name('edit');
     });
 
