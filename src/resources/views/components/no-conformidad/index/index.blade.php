@@ -107,12 +107,14 @@
                                 Ver
                             </flux:button>
 
-                            @can('correct', $nc)
+                            {{-- En la tabla solo se muestra "Corregir" al emisor cuando su NC fue devuelta.
+                                 Calidad edita desde la vista de detalle. --}}
+                            @if ($nc->stage === App\Enums\NcStage::DevueltaEmisor && $nc->issued_by === auth()->id())
                                 <flux:button size="sm" variant="ghost" icon="pencil-square"
                                     :href="route('no-conformidad.edit', $nc)" wire:navigate>
-                                    {{ $nc->stage === App\Enums\NcStage::DevueltaEmisor ? 'Corregir' : 'Editar' }}
+                                    Corregir
                                 </flux:button>
-                            @endcan
+                            @endif
                         </td>
                     </tr>
                 @empty
