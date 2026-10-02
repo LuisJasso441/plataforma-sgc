@@ -76,6 +76,9 @@
                                 {{ $nc->folio }}
                             </a>
                             <div class="text-zinc-500 text-xs whitespace-nowrap">{{ $nc->stage->label() }}</div>
+                            @if ($nc->stage === App\Enums\NcStage::EnVerificacion && $nc->verification_date && ! $nc->verification_date->isFuture())
+                                <flux:badge size="sm" color="amber" class="mt-1">Verificar</flux:badge>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                             <div>{{ $nc->process->name }}</div>

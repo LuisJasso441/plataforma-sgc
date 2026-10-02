@@ -116,7 +116,8 @@ class NonConformity extends Model
 
     public function logs(): HasMany
     {
-        return $this->hasMany(NcLog::class)->latest();
+        // id como desempate: eventos registrados en el mismo segundo
+        return $this->hasMany(NcLog::class)->latest()->latest('id');
     }
 
     /* ───────────── Visibilidad ───────────── */

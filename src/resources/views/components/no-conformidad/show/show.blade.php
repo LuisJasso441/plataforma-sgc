@@ -85,6 +85,15 @@
                         <dt class="text-zinc-500">Origen de acción</dt>
                         <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->origin->label() }}</dd>
                     </div>
+                    @if ($nc->parent)
+                        <div>
+                            <dt class="text-zinc-500">Abierta por no efectividad de</dt>
+                            <dd>
+                                <a href="{{ route('no-conformidad.show', $nc->parent) }}" wire:navigate
+                                    class="font-medium text-sky-600 dark:text-sky-400 hover:underline">{{ $nc->parent->folio }}</a>
+                            </dd>
+                        </div>
+                    @endif
                     @if ($nc->accepted_at)
                         <div>
                             <dt class="text-zinc-500">Aceptada por</dt>
@@ -114,9 +123,14 @@
                 <livewire:no-conformidad.report-panel :nc="$nc" :key="'report-panel-'.$nc->id" />
             @endif
 
-            {{-- Acciones definitivas: desde que Calidad aprueba el reporte --}}
+           {{-- Acciones definitivas: desde que Calidad aprueba el reporte --}}
             @if ($nc->stage->reached(App\Enums\NcStage::CapturaAcciones))
                 <livewire:no-conformidad.actions-panel :nc="$nc" :key="'actions-panel-'.$nc->id" />
+            @endif
+
+            {{-- Verificación de efectividad: cuando todas las acciones están validadas --}}
+            @if ($nc->stage->reached(App\Enums\NcStage::EnVerificacion))
+                <livewire:no-conformidad.verification-panel :nc="$nc" :key="'verification-panel-'.$nc->id" />
             @endif
         </div>
 

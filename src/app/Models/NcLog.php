@@ -48,6 +48,11 @@ class NcLog extends Model
             'accion_rechazada'        => 'Evidencia rechazada por Calidad',
             'implementacion_completa' => 'Implementación completa',
             'vencida'                 => 'NC vencida',
+            'verificacion_pendiente'  => 'Verificación de efectividad pendiente',
+            'verificada_efectiva'     => 'Verificación: acciones efectivas (NC cerrada)',
+            'verificada_no_efectiva'  => 'Verificación: acciones no efectivas',
+            'nueva_accion'            => 'Nueva acción abierta',
+            'creada_por_no_efectiva'  => 'Abierta por NC no efectiva',
             default     => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }

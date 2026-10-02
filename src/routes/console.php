@@ -34,7 +34,17 @@ Artisan::command('nc:refresh-status', function () {
             }
         });
 
-    $this->info("Estatus recalculados. NC con cambio: {$changed}");
-})->purpose('Recalcula el estatus de bitácora de las No Conformidades');
+    // Verificaciones que llegaron a su fecha: se registra una sola vez por NC
+    $due = NonConformity::where('stage', NcStage::EnVerificacion->value)
+        ->whereDate('verification_date', '<=', today())
+        ->whereDoesntHave('logs', fn ($q) => $q->where('event', 'verificacion_pendiente'))
+        ->get();
+
+    foreach ($due as $nc) {
+        $nc->log('verificacion_pendiente', "Fecha de verificación: {$nc->verification_date->format('d/m/Y')}");
+    }
+
+    $this->info("Estatus recalculados. NC con cambio: {$changed}. Verificaciones pendientes nuevas: {$due->count()}");
+})->purpose('Recalcula el estatus de bitácora y detecta verificaciones de efectividad pendientes');
 
 Schedule::command('nc:refresh-status')->dailyAt('00:05');
