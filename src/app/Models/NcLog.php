@@ -43,6 +43,11 @@ class NcLog extends Model
             'reporte_aprobado'    => 'Reporte aprobado por Calidad',
             'reporte_devuelto'    => 'Reporte devuelto al líder',
             'acciones_capturadas' => 'Acciones definitivas registradas',
+            'evidencia_enviada'       => 'Evidencia enviada a revisión',
+            'accion_validada'         => 'Acción validada por Calidad',
+            'accion_rechazada'        => 'Evidencia rechazada por Calidad',
+            'implementacion_completa' => 'Implementación completa',
+            'vencida'                 => 'NC vencida',
             default     => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }

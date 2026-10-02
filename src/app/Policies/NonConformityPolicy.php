@@ -70,9 +70,12 @@ class NonConformityPolicy
             || ($this->isLeader($user, $nc) && $nc->stage === NcStage::CapturaAcciones);
     }
 
-    public function uploadEvidence(User $user, NcAction $action): bool
+    /** Uso: Gate::allows('uploadEvidence', [$nc, $action]) */
+    public function uploadEvidence(User $user, NonConformity $nc, NcAction $action): bool
     {
-        $nc = $action->nonConformity;
+        if ($action->non_conformity_id !== $nc->id) {
+            return false;
+        }
 
         return $this->isQuality($user)
             || ($this->isLeader($user, $nc)

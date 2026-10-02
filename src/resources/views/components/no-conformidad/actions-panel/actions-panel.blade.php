@@ -76,6 +76,12 @@
 
         @if ($savedActions->isEmpty())
             <div class="text-sm text-zinc-500">Sin acciones registradas.</div>
+        @elseif ($nc->stage->reached(App\Enums\NcStage::EnImplementacion))
+            <div class="flex flex-col gap-4">
+                @foreach ($savedActions as $action)
+                    <livewire:no-conformidad.action-card :action="$action" :key="'action-card-'.$action->id" />
+                @endforeach
+            </div>
         @else
             <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
                 <table class="w-full text-sm text-left">
