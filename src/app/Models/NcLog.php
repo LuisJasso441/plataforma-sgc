@@ -39,6 +39,10 @@ class NcLog extends Model
             'editada'   => 'Datos editados',
             'aceptada'  => 'Aceptada por Calidad',
             'devuelta'  => 'Devuelta al emisor',
+            'reporte_enviado'     => 'Reporte enviado a Calidad',
+            'reporte_aprobado'    => 'Reporte aprobado por Calidad',
+            'reporte_devuelto'    => 'Reporte devuelto al líder',
+            'acciones_capturadas' => 'Acciones definitivas registradas',
             default     => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }

@@ -38,4 +38,15 @@ enum NcStage: string
     {
         return in_array($this, [self::Cerrada, self::NoEfectiva], true);
     }
+
+    /**
+     * ¿Esta etapa está en o después de $stage? (según el orden de los cases)
+     * Ej.: EnImplementacion->reached(CapturaAcciones) === true
+     */
+    public function reached(self $stage): bool
+    {
+        $order = array_flip(array_map(fn (self $c) => $c->value, self::cases()));
+
+        return $order[$this->value] >= $order[$stage->value];
+    }
 }

@@ -26,7 +26,17 @@ RUN install-php-extensions \
         xml \
         bcmath \
         zip \
-        intl
+        intl \
+        gd
+
+# --- PHP: límites de subida (reportes/evidencias de NC) y memoria para PhpSpreadsheet ---
+RUN { \
+        echo 'upload_max_filesize = 20M'; \
+        echo 'post_max_size = 25M'; \
+        echo 'memory_limit = 256M'; \
+        echo 'max_file_uploads = 20'; \
+        echo 'date.timezone = America/Mexico_City'; \
+    } > /usr/local/etc/php/conf.d/zz-sga.ini
 
 # --- Apache: mod_rewrite + DocumentRoot a /public ---
 RUN a2enmod rewrite

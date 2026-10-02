@@ -108,6 +108,16 @@
                     <div class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $nc->description }}</div>
                 @endif
             </div>
+
+            {{-- Reporte Excel: desde que Calidad acepta la NC --}}
+            @if ($nc->stage->reached(App\Enums\NcStage::PendienteReporte))
+                <livewire:no-conformidad.report-panel :nc="$nc" :key="'report-panel-'.$nc->id" />
+            @endif
+
+            {{-- Acciones definitivas: desde que Calidad aprueba el reporte --}}
+            @if ($nc->stage->reached(App\Enums\NcStage::CapturaAcciones))
+                <livewire:no-conformidad.actions-panel :nc="$nc" :key="'actions-panel-'.$nc->id" />
+            @endif
         </div>
 
         {{-- Columna lateral --}}
