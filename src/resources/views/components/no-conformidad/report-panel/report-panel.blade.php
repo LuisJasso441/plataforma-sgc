@@ -1,10 +1,20 @@
 <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
-    <flux:heading size="lg">Reporte de No Conformidad</flux:heading>
-    <flux:subheading class="mb-4">Formato llenado en la reunión multidisciplinaria</flux:subheading>
+    <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+            <flux:heading size="lg">Reporte de No Conformidad</flux:heading>
+            <flux:subheading>Formato llenado en la reunión multidisciplinaria</flux:subheading>
+        </div>
+
+        @can('downloadReport', $nc)
+            <flux:button size="sm" icon="arrow-down-tray" :href="route('no-conformidad.report.download', $nc)">
+                Descargar formato prellenado
+            </flux:button>
+        @endcan
+    </div>
 
     @if ($nc->stage === App\Enums\NcStage::PendienteReporte)
         <flux:callout icon="information-circle" class="mb-4"
-            heading="El líder de solución debe convocar la reunión multidisciplinaria, llenar el formato del reporte y subirlo aquí." />
+            heading="Descarga el formato prellenado, convoca la reunión multidisciplinaria, termina de llenarlo y súbelo aquí." />
     @endif
 
     @if ($lastReturn)

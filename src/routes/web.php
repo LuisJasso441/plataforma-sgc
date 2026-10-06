@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\NcAttachmentController;
+use App\Http\Controllers\NcReportDownloadController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
 
@@ -37,6 +38,8 @@ Route::middleware(['auth', 'module:no-conformidad'])
         Volt::route('{nonConformity}/editar', 'no-conformidad.form')->name('edit');
         Route::get('adjuntos/{attachment}', NcAttachmentController::class)
             ->name('attachments.download')->whereNumber('attachment');
+        Route::get('{nonConformity}/reporte', NcReportDownloadController::class)
+            ->name('report.download')->whereNumber('nonConformity');
     });
 
 require __DIR__.'/auth.php';

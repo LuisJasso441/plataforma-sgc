@@ -41,6 +41,12 @@ class NonConformityPolicy
         return $this->viewAny($user) && $nc->isVisibleTo($user);
     }
 
+    /** Formato prellenado: disponible desde que Calidad acepta la NC */
+    public function downloadReport(User $user, NonConformity $nc): bool
+    {
+        return $this->view($user, $nc) && $nc->stage->reached(NcStage::PendienteReporte);
+    }
+
     /* ───────────── Levantamiento ───────────── */
 
     public function create(User $user): bool
