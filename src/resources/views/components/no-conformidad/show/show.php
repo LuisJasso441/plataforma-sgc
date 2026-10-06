@@ -117,7 +117,16 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
             'department.head', 'department.parent.head',
         ]);
 
+        $config   = config('sga.reporte_nc');
+        $logoPath = $config['logo'] ?? null;
+
         return [
+            'rd'              => $this->nc->report_data ?? [],
+            'cintilla'        => $config,
+            // Logo incrustado (vive en resources/, no es público)
+            'logo'            => $logoPath && is_file($logoPath)
+                ? 'data:' . mime_content_type($logoPath) . ';base64,' . base64_encode(file_get_contents($logoPath))
+                : null,
             'logs'            => $this->nc->logs()->with('user')->get(),
             'suggestedLeader' => $this->nc->department->effectiveHead(),
             'leaders'         => User::whereIn('role', ['user', 'calidad'])

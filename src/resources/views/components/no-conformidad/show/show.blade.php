@@ -1,3 +1,11 @@
+@php
+    use App\Enums\NcOrigin;
+    use App\Enums\NcStage;
+
+    $empty = 'Se llenará al subir el reporte.';
+    $docsCatalog = ['Procedimiento', 'Formato', 'Anexos', 'Instructivo de Trabajo', 'Plan Control / POT', 'Alerta', 'Ayuda Visual'];
+@endphp
+
 <div>
     @if (session('status'))
         <flux:callout variant="success" class="mb-4" icon="check-circle" :heading="session('status')" />
@@ -7,7 +15,7 @@
     @endif
 
     {{-- Encabezado --}}
-    <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
+    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
             <div class="flex items-center gap-3">
                 <flux:heading size="xl">{{ $nc->folio }}</flux:heading>
@@ -24,12 +32,12 @@
 
             @can('correct', $nc)
                 <flux:button icon="pencil-square" :href="route('no-conformidad.edit', $nc)" wire:navigate>
-                    {{ $nc->stage === App\Enums\NcStage::DevueltaEmisor ? 'Corregir' : 'Editar' }}
+                    {{ $nc->stage === NcStage::DevueltaEmisor ? 'Corregir' : 'Editar' }}
                 </flux:button>
             @endcan
 
             @can('review', $nc)
-                @if ($nc->stage === App\Enums\NcStage::Solicitada)
+                @if ($nc->stage === NcStage::Solicitada)
                     <flux:modal.trigger name="devolver-nc">
                         <flux:button icon="arrow-uturn-left">Devolver</flux:button>
                     </flux:modal.trigger>
@@ -42,102 +50,270 @@
     </div>
 
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {{-- Columna principal --}}
+        {{-- ═══════════ Columna principal: el reporte ═══════════ --}}
         <div class="flex flex-col gap-6 lg:col-span-2">
-            {{-- Datos generales --}}
-            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
-                <flux:heading size="lg" class="mb-4">Datos generales</flux:heading>
 
-                <dl class="grid grid-cols-1 gap-x-6 gap-y-4 text-sm sm:grid-cols-2">
-                    <div>
-                        <dt class="text-zinc-500">Fecha de registro</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->created_at->format('d/m/Y') }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-zinc-500">Quién emite</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->issuer->name }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-zinc-500">Proceso donde se genera</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->process->name }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-zinc-500">Sub-proceso</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->subprocess?->name ?? 'N. A.' }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-zinc-500">Departamento responsable</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->department->name }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-zinc-500">Líder de solución</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">
-                            @if ($nc->leader)
-                                {{ $nc->leader->name }}
-                            @else
-                                <span class="text-zinc-500">Se asigna al aceptar
-                                    @if ($suggestedLeader) (sugerido: {{ $suggestedLeader->name }}) @endif
-                                </span>
-                            @endif
-                        </dd>
-                    </div>
-                    <div>
-                        <dt class="text-zinc-500">Origen de acción</dt>
-                        <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->origin->label() }}</dd>
-                    </div>
-                    @if ($nc->parent)
-                        <div>
-                            <dt class="text-zinc-500">Abierta por no efectividad de</dt>
-                            <dd>
-                                <a href="{{ route('no-conformidad.show', $nc->parent) }}" wire:navigate
-                                    class="font-medium text-sky-600 dark:text-sky-400 hover:underline">{{ $nc->parent->folio }}</a>
-                            </dd>
-                        </div>
-                    @endif
-                    @if ($nc->accepted_at)
-                        <div>
-                            <dt class="text-zinc-500">Aceptada por</dt>
-                            <dd class="text-zinc-900 dark:text-zinc-100">
-                                {{ $nc->acceptedBy?->name ?? '—' }} · {{ $nc->accepted_at->format('d/m/Y') }}
-                            </dd>
-                        </div>
-                    @endif
-                </dl>
-            </div>
-
-            {{-- Descripción --}}
-            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
-                <flux:heading size="lg" class="mb-4">Descripción de la No Conformidad</flux:heading>
-
-                <div class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $nc->initial_description }}</div>
-
-                @if ($nc->description)
-                    <flux:separator class="my-4" />
-                    <div class="text-xs font-medium text-zinc-500 mb-1">Descripción actualizada (reunión)</div>
-                    <div class="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $nc->description }}</div>
-                @endif
-            </div>
-
-            {{-- Reporte Excel: desde que Calidad acepta la NC --}}
-            @if ($nc->stage->reached(App\Enums\NcStage::PendienteReporte))
+            {{-- Archivo del reporte (descarga, subida y revisión) --}}
+            @if ($nc->stage->reached(NcStage::PendienteReporte))
                 <livewire:no-conformidad.report-panel :nc="$nc" :key="'report-panel-'.$nc->id" />
             @endif
 
-           {{-- Acciones definitivas: desde que Calidad aprueba el reporte --}}
-            @if ($nc->stage->reached(App\Enums\NcStage::CapturaAcciones))
-                <livewire:no-conformidad.actions-panel :nc="$nc" :key="'actions-panel-'.$nc->id" />
-            @endif
+            {{-- Paso 1: Datos --}}
+            <x-nc.step number="1" title="Datos" subtitle="Indicar el tipo de acción, quién emite y a quién se le solicita">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                        <div class="mb-2 text-xs font-semibold uppercase text-zinc-500">a. Datos generales</div>
+                        <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm">
+                            <dt class="text-zinc-500">Fecha:</dt>
+                            <dd class="text-zinc-900 dark:text-zinc-100">{{ $nc->trigger_date?->format('d/m/Y') ?? '—' }}</dd>
+                            <dt class="text-zinc-500">Folio:</dt>
+                            <dd class="font-medium text-zinc-900 dark:text-zinc-100">{{ $nc->folio }}</dd>
+                            <dt class="text-zinc-500">Proceso:</dt>
+                            <dd class="text-zinc-900 dark:text-zinc-100">
+                                {{ $nc->process->name }}{{ $nc->subprocess ? ' / ' . $nc->subprocess->name : '' }}
+                            </dd>
+                            <dt class="text-zinc-500">Líder de Solución:</dt>
+                            <dd class="text-zinc-900 dark:text-zinc-100">
+                                @if ($nc->leader)
+                                    {{ $nc->leader->name }}
+                                @else
+                                    <span class="text-zinc-500">Se asigna al aceptar
+                                        @if ($suggestedLeader) (sugerido: {{ $suggestedLeader->name }}) @endif
+                                    </span>
+                                @endif
+                            </dd>
+                        </dl>
+                    </div>
 
-            {{-- Verificación de efectividad: cuando todas las acciones están validadas --}}
-            @if ($nc->stage->reached(App\Enums\NcStage::EnVerificacion))
-                <livewire:no-conformidad.verification-panel :nc="$nc" :key="'verification-panel-'.$nc->id" />
-            @endif
+                    <div>
+                        <div class="mb-2 text-xs font-semibold uppercase text-zinc-500">b. Origen de acción</div>
+                        <div class="flex flex-col gap-1.5">
+                            @foreach (NcOrigin::cases() as $origin)
+                                <x-nc.check :checked="$nc->origin === $origin">{{ $origin->label() }}</x-nc.check>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Datos propios de la plataforma --}}
+                <div class="mt-4 grid grid-cols-1 gap-3 border-t border-zinc-200 pt-3 text-xs dark:border-zinc-700 sm:grid-cols-3">
+                    <div>
+                        <div class="text-zinc-500">Quién emite</div>
+                        <div class="text-zinc-900 dark:text-zinc-100">{{ $nc->issuer->name }} · {{ $nc->created_at->format('d/m/Y') }}</div>
+                    </div>
+                    <div>
+                        <div class="text-zinc-500">Departamento responsable</div>
+                        <div class="text-zinc-900 dark:text-zinc-100">{{ $nc->department->name }}</div>
+                    </div>
+                    <div>
+                        <div class="text-zinc-500">Aceptada por</div>
+                        <div class="text-zinc-900 dark:text-zinc-100">
+                            {{ $nc->accepted_at ? ($nc->acceptedBy?->name ?? '—') . ' · ' . $nc->accepted_at->format('d/m/Y') : '—' }}
+                        </div>
+                    </div>
+                    @if ($nc->parent)
+                        <div class="sm:col-span-3">
+                            <span class="text-zinc-500">Abierta por no efectividad de</span>
+                            <a href="{{ route('no-conformidad.show', $nc->parent) }}" wire:navigate
+                                class="font-medium text-sky-600 hover:underline dark:text-sky-400">{{ $nc->parent->folio }}</a>
+                        </div>
+                    @endif
+                </div>
+            </x-nc.step>
+
+            {{-- Paso 2: Descripción del problema --}}
+            <x-nc.step number="2" title="Descripción del problema"
+                subtitle="Detalle del problema con: Qué sucedió, cantidad, operación, fecha, etc. (QUÉ, QUIÉN, CÓMO, CUÁNDO, DÓNDE, CUÁNTO, POR QUÉ, ETC.)">
+                <div class="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">{{ $nc->description ?? $nc->initial_description }}</div>
+
+                @if ($nc->description && $nc->description !== $nc->initial_description)
+                    <details class="mt-3 text-xs text-zinc-500">
+                        <summary class="cursor-pointer">Ver descripción original de la solicitud</summary>
+                        <div class="mt-1 whitespace-pre-line">{{ $nc->initial_description }}</div>
+                    </details>
+                @endif
+            </x-nc.step>
+
+            {{-- Paso 3: Equipo de trabajo --}}
+            <x-nc.step number="3" title="Equipo de trabajo" subtitle="El equipo debe ser multidisciplinario en la medida de lo posible">
+                @if (! empty($rd['equipo']))
+                    <div class="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                        @foreach ($rd['equipo'] as $member)
+                            <div class="flex justify-between gap-3 border-b border-zinc-100 pb-1 dark:border-zinc-800">
+                                <span class="text-zinc-900 dark:text-zinc-100">{{ $member['nombre'] ?: '—' }}</span>
+                                <span class="text-zinc-500">{{ $member['area'] ?: '—' }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-sm text-zinc-500">{{ $empty }}</div>
+                @endif
+            </x-nc.step>
+
+            {{-- Paso 4: Acciones de contención --}}
+            <x-nc.step number="4" title="Acciones de contención" subtitle="Defina las acciones inmediatas de contención (24 horas máximo)">
+                @if (! empty($rd['contencion']))
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-xs text-zinc-500">
+                                <tr>
+                                    <th class="py-1 pr-3 font-medium">Actividad / Evidencia de realización</th>
+                                    <th class="py-1 pr-3 font-medium">Responsable</th>
+                                    <th class="py-1 pr-3 font-medium">Fecha inicio</th>
+                                    <th class="py-1 font-medium">Fecha final</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                @foreach ($rd['contencion'] as $item)
+                                    <tr class="align-top">
+                                        <td class="py-1.5 pr-3 whitespace-pre-line">{{ $item['actividad'] ?: '—' }}</td>
+                                        <td class="py-1.5 pr-3">{{ $item['responsable'] ?: '—' }}</td>
+                                        <td class="py-1.5 pr-3 whitespace-nowrap">{{ $item['fecha_inicio'] ? \Illuminate\Support\Carbon::parse($item['fecha_inicio'])->format('d/m/Y') : '—' }}</td>
+                                        <td class="py-1.5 whitespace-nowrap">{{ $item['fecha_final'] ? \Illuminate\Support\Carbon::parse($item['fecha_final'])->format('d/m/Y') : '—' }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-sm text-zinc-500">{{ $empty }}</div>
+                @endif
+            </x-nc.step>
+
+            {{-- Paso 5: Análisis de causa raíz --}}
+            <x-nc.step number="5" title="Análisis de causa raíz">
+                <div class="text-sm text-zinc-600 dark:text-zinc-400">
+                    El análisis se realiza en las hojas de herramientas del reporte (5 P's, Ishikawa, lluvia de ideas).
+                    Consúltalo en el archivo vigente del reporte.
+                </div>
+            </x-nc.step>
+
+            {{-- Paso 6: Resultado del análisis de causa raíz --}}
+            <x-nc.step number="6" title="Resultado del análisis de causa raíz"
+                subtitle="Describa el origen del problema o sus principales causas probables">
+                @if (! empty($rd['causa_raiz']))
+                    <div class="whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-300">{{ $rd['causa_raiz'] }}</div>
+                @else
+                    <div class="text-sm text-zinc-500">{{ $empty }}</div>
+                @endif
+            </x-nc.step>
+
+            {{-- Paso 7: Acciones definitivas --}}
+            <x-nc.step number="7" title="Acciones definitivas" subtitle="Revisar el impacto del problema en otros productos y procesos">
+                <div class="flex flex-col gap-5">
+                    @if ($rd)
+                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            {{-- Procesos similares --}}
+                            <div>
+                                <div class="mb-2 text-xs font-semibold text-zinc-500">¿Aplica a procesos similares?</div>
+                                <div class="flex gap-4">
+                                    <x-nc.check :checked="($rd['procesos_similares']['aplica'] ?? null) === 'si'">SI</x-nc.check>
+                                    <x-nc.check :checked="($rd['procesos_similares']['aplica'] ?? null) === 'no'">NO</x-nc.check>
+                                </div>
+                                @if (! empty($rd['procesos_similares']['cuales']))
+                                    <div class="mt-2 text-sm">
+                                        <span class="text-zinc-500">¿Cuáles?</span>
+                                        <span class="text-zinc-900 dark:text-zinc-100">{{ $rd['procesos_similares']['cuales'] }}</span>
+                                    </div>
+                                @endif
+                            </div>
+
+                            {{-- Cambios en documentos --}}
+                            <div>
+                                <div class="mb-2 text-xs font-semibold text-zinc-500">¿Requiere cambios en documentos?</div>
+                                <div class="flex flex-wrap gap-4">
+                                    @foreach (['si' => 'SI', 'no' => 'NO', 'creacion' => 'CREACIÓN'] as $value => $label)
+                                        <x-nc.check :checked="($rd['cambios_documentos']['opcion'] ?? null) === $value">{{ $label }}</x-nc.check>
+                                    @endforeach
+                                </div>
+                                <div class="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                                    @foreach ($docsCatalog as $doc)
+                                        <x-nc.check :checked="in_array($doc, $rd['cambios_documentos']['documentos'] ?? [], true)">{{ $doc }}</x-nc.check>
+                                    @endforeach
+                                </div>
+                                @if (! empty($rd['cambios_documentos']['otro']))
+                                    <div class="mt-2 text-sm">
+                                        <span class="text-zinc-500">Otro documento:</span>
+                                        <span class="text-zinc-900 dark:text-zinc-100">{{ $rd['cambios_documentos']['otro'] }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Actividades: captura / evidencias (plataforma) o lo leído del reporte --}}
+                    @if ($nc->stage->reached(NcStage::CapturaAcciones))
+                        <livewire:no-conformidad.actions-panel :nc="$nc" :key="'actions-panel-'.$nc->id" />
+                    @elseif (! empty($rd['acciones']))
+                        <div>
+                            <div class="mb-2 text-xs font-semibold text-zinc-500">
+                                Actividades que eliminarán el problema de raíz (leídas del reporte)
+                            </div>
+                            <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-zinc-50 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                                        <tr>
+                                            <th class="px-3 py-2 font-medium">Número</th>
+                                            <th class="px-3 py-2 font-medium">Actividad / Evidencia de realización</th>
+                                            <th class="px-3 py-2 font-medium">Responsable</th>
+                                            <th class="px-3 py-2 font-medium">Fecha compromiso</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                                        @foreach ($rd['acciones'] as $action)
+                                            <tr class="align-top">
+                                                <td class="px-3 py-2">{{ $action['numero'] }}</td>
+                                                <td class="px-3 py-2 whitespace-pre-line">{{ $action['actividad'] ?: '—' }}</td>
+                                                <td class="px-3 py-2">{{ $action['responsable'] ?: '—' }}</td>
+                                                <td class="px-3 py-2 whitespace-nowrap">
+                                                    {{ $action['fecha_compromiso'] ? \Illuminate\Support\Carbon::parse($action['fecha_compromiso'])->format('d/m/Y') : '—' }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-sm text-zinc-500">{{ $empty }}</div>
+                    @endif
+
+                    {{-- Efectividad de acciones --}}
+                    @if (! empty($rd['efectividad']['evidencia']) || ! empty($rd['efectividad']['plazo']))
+                        <div class="grid grid-cols-1 gap-4 border-t border-zinc-200 pt-4 text-sm dark:border-zinc-700 md:grid-cols-3">
+                            <div class="md:col-span-2">
+                                <div class="text-xs font-semibold text-zinc-500">Efectividad de acciones: cómo se demostrará que el problema fue eliminado</div>
+                                <div class="mt-1 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{{ $rd['efectividad']['evidencia'] ?: '—' }}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-semibold text-zinc-500">Plazo / fecha para verificación</div>
+                                <div class="mt-1 text-zinc-700 dark:text-zinc-300">{{ $rd['efectividad']['plazo'] ?: '—' }}</div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </x-nc.step>
+
+            {{-- Paso 8: Seguimiento de efectividad --}}
+            <x-nc.step number="8" title="Seguimiento de efectividad de acciones"
+                subtitle="Verificación de efectividad de las acciones tomadas para la eliminación del problema">
+                @if ($nc->stage->reached(NcStage::EnVerificacion))
+                    <livewire:no-conformidad.verification-panel :nc="$nc" :key="'verification-panel-'.$nc->id" />
+                @else
+                    <div class="text-sm text-zinc-500">
+                        Se realiza cuando todas las acciones definitivas estén validadas
+                        @if ($nc->verification_date)
+                            · fecha de verificación: {{ $nc->verification_date->format('d/m/Y') }}
+                        @endif
+                    </div>
+                @endif
+            </x-nc.step>
         </div>
 
-        {{-- Columna lateral --}}
+        {{-- ═══════════ Columna lateral ═══════════ --}}
         <div class="flex flex-col gap-6">
             {{-- Fechas --}}
-            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
+            <div class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
                 <flux:heading size="lg" class="mb-4">Seguimiento de fechas</flux:heading>
 
                 <dl class="grid grid-cols-1 gap-3 text-sm">
@@ -161,7 +337,7 @@
             </div>
 
             {{-- Línea de tiempo --}}
-            <div class="rounded-lg border border-zinc-200 dark:border-zinc-700 p-5">
+            <div class="rounded-lg border border-zinc-200 p-5 dark:border-zinc-700">
                 <flux:heading size="lg" class="mb-4">Línea de tiempo</flux:heading>
 
                 <ol class="relative ms-2 border-s border-zinc-200 dark:border-zinc-700">
@@ -173,7 +349,7 @@
                             </div>
                             <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $log->eventLabel() }}</div>
                             @if ($log->comment)
-                                <div class="mt-1 text-sm text-zinc-600 dark:text-zinc-400 whitespace-pre-line">{{ $log->comment }}</div>
+                                <div class="mt-1 whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-400">{{ $log->comment }}</div>
                             @endif
                         </li>
                     @empty
