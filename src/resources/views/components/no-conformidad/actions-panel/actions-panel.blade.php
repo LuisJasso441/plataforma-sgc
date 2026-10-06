@@ -5,6 +5,10 @@
     @if ($editable)
         {{-- Captura (líder) --}}
         <div class="flex flex-col gap-6">
+            @if ($fromReport)
+                <flux:callout icon="document-arrow-up"
+                    heading="Acciones tomadas del reporte (Paso 7). Revísalas, complétalas si hace falta y guarda." />
+            @endif
             <flux:textarea wire:model="description" label="Descripción actualizada de la No Conformidad" rows="4"
                 description="Ajusta la descripción con lo acordado en la reunión." />
 

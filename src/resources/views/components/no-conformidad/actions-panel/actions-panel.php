@@ -13,6 +13,9 @@ new class extends Component
 
     public string $description = '';
 
+    /** true si las acciones vienen del reporte y aún no hay borrador guardado */
+    public bool $fromReport = false;
+
     /** @var list<array{activity:string, responsible:string, commitment_date:string}> */
     public array $actions = [];
 
@@ -21,11 +24,21 @@ new class extends Component
         $this->nc = $nc;
         $this->description = $nc->description ?? $nc->initial_description;
 
-        $this->actions = $nc->actions()->get()->map(fn ($a) => [
+        $saved = $nc->actions()->get()->map(fn ($a) => [
             'activity'        => $a->activity,
             'responsible'     => $a->responsible,
             'commitment_date' => $a->commitment_date->format('Y-m-d'),
-        ])->all() ?: [$this->emptyAction()];
+        ])->all();
+
+        // Sin borrador guardado: se prellenan con las acciones del reporte (Paso 7)
+        $reportActions = collect($nc->report_data['acciones'] ?? [])->map(fn ($a) => [
+            'activity'        => $a['actividad'] ?? '',
+            'responsible'     => $a['responsable'] ?? '',
+            'commitment_date' => $a['fecha_compromiso'] ?? '',
+        ])->all();
+
+        $this->fromReport = ! $saved && $reportActions;
+        $this->actions    = $saved ?: ($reportActions ?: [$this->emptyAction()]);
     }
 
     protected function emptyAction(): array

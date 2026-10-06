@@ -20,7 +20,7 @@ class NonConformity extends Model
     protected $fillable = [
         'folio', 'folio_year', 'folio_number', 'parent_id',
         'issued_by', 'department_id', 'nc_process_id', 'nc_subprocess_id', 'leader_id', 'origin',
-        'initial_description', 'description',
+        'initial_description', 'description', 'report_data',
         'stage', 'status',
         'trigger_date', 'commitment_date', 'verification_date', 'actual_close_date',
         'is_effective', 'observations', 'lessons_learned',
@@ -38,6 +38,7 @@ class NonConformity extends Model
             'verification_date' => 'date',
             'actual_close_date' => 'date',
             'is_effective'      => 'boolean',
+            'report_data'       => 'array',
             'accepted_at'       => 'datetime',
             'closed_at'         => 'datetime',
         ];

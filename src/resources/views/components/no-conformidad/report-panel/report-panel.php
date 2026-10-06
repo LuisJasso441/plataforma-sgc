@@ -4,6 +4,7 @@ use App\Enums\NcStage;
 use App\Models\NcAttachment;
 use App\Models\NonConformity;
 use App\Support\NcReportReader;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
@@ -35,11 +36,22 @@ new class extends Component
             'report' => ['required', 'file', 'extensions:xlsx,xls,xlsm', 'max:10240'],
         ], [], ['report' => 'reporte']);
 
-        // Fecha de disparo = campo "Fecha" del Paso 1 del reporte
-        $triggerDate = NcReportReader::triggerDate($this->report->getRealPath());
+        // Lectura completa del reporte (Pasos 1 a 7)
+        try {
+            $data = NcReportReader::read($this->report->getRealPath());
+        } catch (\RuntimeException $e) {
+            $this->addError('report', $e->getMessage());
+            return;
+        } catch (\Throwable) {
+            $this->addError('report', 'No se pudo leer el archivo. Verifica que sea el formato oficial guardado como Excel (.xlsx).');
+            return;
+        }
+
+        // Fecha de disparo = campo "Fecha" del Paso 1
+        $triggerDate = $data['fecha'];
 
         if (! $triggerDate) {
-            $this->addError('report', 'No se pudo leer la fecha del reporte (Paso 1 › Datos generales › Fecha). Verifica que sea el formato oficial y que la fecha esté capturada.');
+            $this->addError('report', 'No se pudo leer la fecha del reporte (Paso 1 › Datos generales › Fecha). Verifica que la fecha esté capturada.');
             return;
         }
 
@@ -48,7 +60,7 @@ new class extends Component
             return;
         }
 
-        DB::transaction(function () use ($triggerDate) {
+        DB::transaction(function () use ($triggerDate, $data) {
             $from = $this->nc->stage;
 
             $attachment = NcAttachment::storeUpload(
@@ -61,11 +73,20 @@ new class extends Component
             $this->nc->update([
                 'stage'        => NcStage::ReporteEnRevision,
                 'trigger_date' => $triggerDate,
+                // Paso 2: si viene vacío se conserva la descripción actual
+                'description'  => $data['descripcion'] !== '' ? $data['descripcion'] : $this->nc->description,
+                // Pasos 3 a 7 (incluye las acciones que prellenan la captura)
+                'report_data'  => Arr::except($data, ['fecha', 'descripcion']),
             ]);
 
             $this->nc->log(
                 'reporte_enviado',
-                "{$attachment->original_name} · Fecha de reunión: {$triggerDate->format('d/m/Y')}",
+                sprintf(
+                    '%s · Fecha de reunión: %s · %d acción(es) definitiva(s) leída(s)',
+                    $attachment->original_name,
+                    $triggerDate->format('d/m/Y'),
+                    count($data['acciones']),
+                ),
                 $from,
                 NcStage::ReporteEnRevision,
             );
