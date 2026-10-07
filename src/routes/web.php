@@ -40,6 +40,8 @@ Route::middleware(['auth', 'module:no-conformidad'])
             ->name('attachments.download')->whereNumber('attachment');
         Route::get('{nonConformity}/reporte', NcReportDownloadController::class)
             ->name('report.download')->whereNumber('nonConformity');
+        Volt::route('{nonConformity}/reporte/editar', 'no-conformidad.report-form')
+            ->name('report.edit')->whereNumber('nonConformity');
     });
 
 require __DIR__.'/auth.php';

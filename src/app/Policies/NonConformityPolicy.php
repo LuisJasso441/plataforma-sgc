@@ -70,6 +70,13 @@ class NonConformityPolicy
                 && in_array($nc->stage, [NcStage::PendienteReporte, NcStage::ReporteDevuelto], true));
     }
 
+    /** Pasos 3 a 7 del reporte: Calidad siempre (ya aceptada); el líder en Captura de acciones */
+    public function editReportData(User $user, NonConformity $nc): bool
+    {
+        return ($this->isQuality($user) && $nc->stage->reached(NcStage::PendienteReporte))
+            || ($this->isLeader($user, $nc) && $nc->stage === NcStage::CapturaAcciones);
+    }
+
     public function manageActions(User $user, NonConformity $nc): bool
     {
         return $this->isQuality($user)

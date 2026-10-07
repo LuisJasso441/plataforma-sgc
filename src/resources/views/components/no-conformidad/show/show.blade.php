@@ -36,6 +36,12 @@
                 </flux:button>
             @endcan
 
+            @can('editReportData', $nc)
+                <flux:button icon="document-text" :href="route('no-conformidad.report.edit', $nc)" wire:navigate>
+                    Editar datos del reporte
+                </flux:button>
+            @endcan
+
             @can('review', $nc)
                 @if ($nc->stage === NcStage::Solicitada)
                     <flux:modal.trigger name="devolver-nc">

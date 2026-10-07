@@ -26,7 +26,7 @@ class NcReportReader
     /** Casillas del Paso 7 (shapeId del control de formulario) */
     private const SHAPE_SIMILARES  = ['si' => 2134, 'no' => 2137];
     private const SHAPE_CAMBIOS    = ['si' => 2129, 'no' => 2130, 'creacion' => 2148];
-    private const SHAPE_DOCUMENTOS = [
+    public const SHAPE_DOCUMENTOS = [
         'Procedimiento'          => 2120,
         'Formato'                => 2123,
         'Anexos'                 => 2125,

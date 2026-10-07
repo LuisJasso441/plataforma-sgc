@@ -53,6 +53,7 @@ class NcLog extends Model
             'verificada_no_efectiva'  => 'Verificación: acciones no efectivas',
             'nueva_accion'            => 'Nueva acción abierta',
             'creada_por_no_efectiva'  => 'Abierta por NC no efectiva',
+            'reporte_editado'         => 'Datos del reporte editados en la plataforma',
             default     => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }
