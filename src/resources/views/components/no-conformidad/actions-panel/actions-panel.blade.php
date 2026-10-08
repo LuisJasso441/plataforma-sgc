@@ -52,6 +52,15 @@
                 </div>
             </div>
 
+            {{-- Efectividad de acciones (Paso 7 del formato) --}}
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-[1fr_16rem]">
+                <flux:textarea wire:model="efectividad_evidencia" rows="3"
+                    label="Efectividad de acciones"
+                    description="Cómo se demostrará (con qué evidencia) que el problema ha sido eliminado y no será recurrente (indicador, quejas, rechazo de servicio, ahorro de dinero, etc.). Obligatorio para enviar a implementación." />
+                <flux:input wire:model="efectividad_plazo"
+                    label="Plazo / fecha para verificación de efectividad de las acciones" />
+            </div>
+
             {{-- Fechas calculadas --}}
             <div class="grid grid-cols-1 gap-3 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 p-4 text-sm sm:grid-cols-2">
                 <div>
@@ -75,10 +84,35 @@
     @else
         {{-- Solo lectura --}}
         @if ($nc->stage === App\Enums\NcStage::CapturaAcciones)
-            <flux:callout icon="clock" class="mb-4" heading="El líder de solución está capturando las acciones definitivas." />
-        @endif
+            {{-- Captura en curso (vista de lectura): acciones del reporte o del borrador de Calidad --}}
+            <flux:callout icon="clock" class="mb-4"
+                heading="Calidad está revisando las acciones definitivas. Cuando las envíe a implementación podrás subir las evidencias." />
 
-        @if ($savedActions->isEmpty())
+            <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-zinc-50 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300">
+                        <tr>
+                            <th class="px-4 py-3 font-medium">#</th>
+                            <th class="px-4 py-3 font-medium min-w-64">Actividad</th>
+                            <th class="px-4 py-3 font-medium">Responsable</th>
+                            <th class="px-4 py-3 font-medium">Compromiso</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        @foreach ($actions as $i => $action)
+                            <tr class="align-top">
+                                <td class="px-4 py-3">{{ $i + 1 }}</td>
+                                <td class="px-4 py-3 whitespace-pre-line">{{ $action['activity'] ?: '—' }}</td>
+                                <td class="px-4 py-3">{{ $action['responsible'] ?: '—' }}</td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    {{ $action['commitment_date'] ? \Illuminate\Support\Carbon::parse($action['commitment_date'])->format('d/m/Y') : '—' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @elseif ($savedActions->isEmpty())
             <div class="text-sm text-zinc-500">Sin acciones registradas.</div>
         @elseif ($nc->stage->reached(App\Enums\NcStage::EnImplementacion))
             <div class="flex flex-col gap-4">

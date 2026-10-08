@@ -13,6 +13,10 @@ new class extends Component
 
     public string $description = '';
 
+    // Paso 7: efectividad de acciones (obligatoria para enviar a implementación)
+    public string $efectividad_evidencia = '';
+    public string $efectividad_plazo = '';
+
     /** true si las acciones vienen del reporte y aún no hay borrador guardado */
     public bool $fromReport = false;
 
@@ -23,6 +27,8 @@ new class extends Component
     {
         $this->nc = $nc;
         $this->description = $nc->description ?? $nc->initial_description;
+        $this->efectividad_evidencia = $nc->report_data['efectividad']['evidencia'] ?? '';
+        $this->efectividad_plazo     = $nc->report_data['efectividad']['plazo'] ?? '';
 
         $saved = $nc->actions()->get()->map(fn ($a) => [
             'activity'        => $a->activity,
@@ -61,6 +67,8 @@ new class extends Component
     {
         return [
             'description'               => ['required', 'string', 'min:10', 'max:5000'],
+            'efectividad_evidencia'     => ['nullable', 'string', 'max:5000'],
+            'efectividad_plazo'         => ['nullable', 'string', 'max:100'],
             'actions'                   => ['required', 'array', 'min:1', 'max:30'],
             'actions.*.activity'        => ['required', 'string', 'max:2000'],
             'actions.*.responsible'     => ['required', 'string', 'max:150'],
@@ -75,6 +83,8 @@ new class extends Component
     {
         return [
             'description'               => 'descripción actualizada',
+            'efectividad_evidencia'     => 'efectividad de acciones',
+            'efectividad_plazo'         => 'plazo / fecha para verificación',
             'actions.*.activity'        => 'actividad',
             'actions.*.responsible'     => 'responsable',
             'actions.*.commitment_date' => 'fecha compromiso',
@@ -105,11 +115,20 @@ new class extends Component
             return;
         }
 
-        $this->validate();
+        $this->validate(array_merge($this->rules(), $submit ? [
+            'efectividad_evidencia' => ['required', 'string', 'min:10', 'max:5000'],
+            'efectividad_plazo'     => ['required', 'string', 'max:100'],
+        ] : []));
 
         DB::transaction(function () use ($submit) {
             $this->nc->update([
                 'description' => trim($this->description),
+                'report_data' => array_merge($this->nc->report_data ?? [], [
+                    'efectividad' => [
+                        'evidencia' => trim($this->efectividad_evidencia),
+                        'plazo'     => trim($this->efectividad_plazo),
+                    ],
+                ]),
             ]);
 
             // En captura todavía no hay evidencias: se reescriben las acciones completas

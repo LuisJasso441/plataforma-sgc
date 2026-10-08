@@ -140,6 +140,9 @@
                 @endif
             </x-nc.step>
 
+            {{-- Pasos 3 a 8: solo desde que se sube el reporte --}}
+            @if ($nc->stage->reached(NcStage::ReporteEnRevision))
+
             {{-- Paso 3: Equipo de trabajo --}}
             <x-nc.step number="3" title="Equipo de trabajo" subtitle="El equipo debe ser multidisciplinario en la medida de lo posible">
                 @if (! empty($rd['equipo']))
@@ -284,19 +287,31 @@
                         <div class="text-sm text-zinc-500">{{ $empty }}</div>
                     @endif
 
-                    {{-- Efectividad de acciones --}}
-                    @if (! empty($rd['efectividad']['evidencia']) || ! empty($rd['efectividad']['plazo']))
-                        <div class="grid grid-cols-1 gap-4 border-t border-zinc-200 pt-4 text-sm dark:border-zinc-700 md:grid-cols-3">
-                            <div class="md:col-span-2">
-                                <div class="text-xs font-semibold text-zinc-500">Efectividad de acciones: cómo se demostrará que el problema fue eliminado</div>
-                                <div class="mt-1 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{{ $rd['efectividad']['evidencia'] ?: '—' }}</div>
+                    {{-- Efectividad de acciones (siempre visible: es un campo a llenar del formato) --}}
+                    @php
+                        $efEvidencia = $rd['efectividad']['evidencia'] ?? '';
+                        $efPlazo     = $rd['efectividad']['plazo'] ?? '';
+                    @endphp
+                    <div class="grid grid-cols-1 overflow-hidden rounded-lg border border-zinc-200 text-sm dark:border-zinc-700 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+                        <div class="border-b border-zinc-200 p-3 dark:border-zinc-700 md:border-b-0 md:border-r">
+                            <div class="text-xs font-semibold text-zinc-500">
+                                EFECTIVIDAD DE ACCIONES: mencione cómo se demostrará (con qué evidencia) que el problema ha sido eliminado y no será recurrente
                             </div>
-                            <div>
-                                <div class="text-xs font-semibold text-zinc-500">Plazo / fecha para verificación</div>
-                                <div class="mt-1 text-zinc-700 dark:text-zinc-300">{{ $rd['efectividad']['plazo'] ?: '—' }}</div>
-                            </div>
+                            @if ($efEvidencia !== '')
+                                <div class="mt-1 whitespace-pre-line text-zinc-700 dark:text-zinc-300">{{ $efEvidencia }}</div>
+                            @else
+                                <div class="mt-1 text-amber-600 dark:text-amber-400">Pendiente de llenar</div>
+                            @endif
                         </div>
-                    @endif
+                        <div class="p-3">
+                            <div class="text-xs font-semibold text-zinc-500">Plazo / fecha para verificación de efectividad de las acciones</div>
+                            @if ($efPlazo !== '')
+                                <div class="mt-1 text-zinc-700 dark:text-zinc-300">{{ $efPlazo }}</div>
+                            @else
+                                <div class="mt-1 text-amber-600 dark:text-amber-400">Pendiente de llenar</div>
+                            @endif
+                        </div>
+                    </div>
                 </div>
             </x-nc.step>
 
@@ -314,6 +329,12 @@
                     </div>
                 @endif
             </x-nc.step>
+
+            @else
+                <div class="rounded-lg border border-dashed border-zinc-300 p-4 text-center text-sm text-zinc-500 dark:border-zinc-700">
+                    Los pasos 3 a 8 del reporte se mostrarán cuando el líder de solución suba el reporte de la reunión.
+                </div>
+            @endif
         </div>
 
         {{-- ═══════════ Columna lateral ═══════════ --}}

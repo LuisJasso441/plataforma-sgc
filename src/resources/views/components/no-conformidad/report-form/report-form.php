@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\NcStage;
 use App\Models\NonConformity;
 use App\Support\NcReportReader;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,9 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
 
     // Paso 4
     public array $contencion = [];
+
+    // Paso 7: acciones definitivas (editables solo antes de la captura)
+    public array $acciones = [];
 
     // Paso 6
     public string $causa_raiz = '';
@@ -50,6 +54,12 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
             'fecha_final'  => $c['fecha_final'] ?? '',
         ])->all() ?: [$this->emptyRow('contencion')];
 
+        $this->acciones = collect($rd['acciones'] ?? [])->map(fn ($a) => [
+            'actividad'        => $a['actividad'] ?? '',
+            'responsable'      => $a['responsable'] ?? '',
+            'fecha_compromiso' => $a['fecha_compromiso'] ?? '',
+        ])->all() ?: [$this->emptyRow('acciones')];
+
         $this->causa_raiz            = $rd['causa_raiz'] ?? '';
         $this->similares_aplica      = $rd['procesos_similares']['aplica'] ?? '';
         $this->similares_cuales      = $rd['procesos_similares']['cuales'] ?? '';
@@ -62,21 +72,37 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
 
     protected function emptyRow(string $list): array
     {
-        return $list === 'equipo'
-            ? ['nombre' => '', 'area' => '']
-            : ['actividad' => '', 'responsable' => '', 'fecha_inicio' => '', 'fecha_final' => ''];
+        return match ($list) {
+            'equipo'   => ['nombre' => '', 'area' => ''],
+            'acciones' => ['actividad' => '', 'responsable' => '', 'fecha_compromiso' => ''],
+            default    => ['actividad' => '', 'responsable' => '', 'fecha_inicio' => '', 'fecha_final' => ''],
+        };
+    }
+
+    /** Listas que se pueden editar en este momento */
+    protected function editableLists(): array
+    {
+        return $this->actionsEditable()
+            ? ['equipo', 'contencion', 'acciones']
+            : ['equipo', 'contencion'];
+    }
+
+    /** Las acciones del reporte se editan aquí solo antes de la captura */
+    protected function actionsEditable(): bool
+    {
+        return ! $this->nc->stage->reached(NcStage::CapturaAcciones);
     }
 
     public function addRow(string $list): void
     {
-        if (in_array($list, ['equipo', 'contencion'], true)) {
+        if (in_array($list, $this->editableLists(), true)) {
             $this->{$list}[] = $this->emptyRow($list);
         }
     }
 
     public function removeRow(string $list, int $index): void
     {
-        if (! in_array($list, ['equipo', 'contencion'], true)) {
+        if (! in_array($list, $this->editableLists(), true)) {
             return;
         }
 
@@ -86,7 +112,7 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'equipo'                    => ['array', 'max:20'],
             'equipo.*.nombre'           => ['nullable', 'string', 'max:150'],
             'equipo.*.area'             => ['nullable', 'string', 'max:150'],
@@ -105,14 +131,31 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
             'efectividad_evidencia'     => ['nullable', 'string', 'max:5000'],
             'efectividad_plazo'         => ['nullable', 'string', 'max:100'],
         ];
+
+        if ($this->actionsEditable()) {
+            $commitment = ['nullable', 'date'];
+            if ($this->nc->trigger_date) {
+                $commitment[] = 'after_or_equal:' . $this->nc->trigger_date->format('Y-m-d');
+            }
+
+            $rules += [
+                'acciones'                    => ['array', 'max:30'],
+                'acciones.*.actividad'        => ['nullable', 'string', 'max:2000'],
+                'acciones.*.responsable'      => ['nullable', 'string', 'max:150'],
+                'acciones.*.fecha_compromiso' => $commitment,
+            ];
+        }
+
+        return $rules;
     }
 
     protected function validationAttributes(): array
     {
         return [
-            'contencion.*.fecha_final'  => 'fecha final',
-            'contencion.*.fecha_inicio' => 'fecha inicio',
-            'causa_raiz'                => 'causa raíz',
+            'contencion.*.fecha_final'    => 'fecha final',
+            'contencion.*.fecha_inicio'   => 'fecha inicio',
+            'acciones.*.fecha_compromiso' => 'fecha compromiso',
+            'causa_raiz'                  => 'causa raíz',
         ];
     }
 
@@ -137,10 +180,24 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
             ->filter(fn ($c) => $c['actividad'] !== '' || $c['responsable'] !== '' || $c['fecha_inicio'])
             ->values()->all();
 
-        DB::transaction(function () use ($equipo, $contencion) {
-            // Se conservan las claves que no se editan aquí (ej. 'acciones')
+        // Paso 7: acciones (solo antes de la captura); se descartan vacías y se renumeran
+        $acciones = $this->actionsEditable()
+            ? collect($this->acciones)
+                ->map(fn ($a) => [
+                    'actividad'        => trim($a['actividad']),
+                    'responsable'      => trim($a['responsable']),
+                    'fecha_compromiso' => $a['fecha_compromiso'] ?: null,
+                ])
+                ->filter(fn ($a) => $a['actividad'] !== '' || $a['responsable'] !== '' || $a['fecha_compromiso'])
+                ->values()
+                ->map(fn ($a, $i) => ['numero' => $i + 1] + $a)
+                ->all()
+            : null;
+
+        DB::transaction(function () use ($equipo, $contencion, $acciones) {
+            // Se conservan las claves que no se editan aquí; 'acciones' solo antes de la captura
             $this->nc->update([
-                'report_data' => array_merge($this->nc->report_data ?? [], [
+                'report_data' => array_merge($this->nc->report_data ?? [], $acciones !== null ? ['acciones' => $acciones] : [], [
                     'equipo'             => $equipo,
                     'contencion'         => $contencion,
                     'causa_raiz'         => trim($this->causa_raiz),
@@ -172,6 +229,7 @@ new #[Layout('components.layouts.app')] #[Title('Datos del reporte')] class exte
     {
         return [
             'documentCatalog' => array_keys(NcReportReader::SHAPE_DOCUMENTOS),
+            'actionsEditable' => $this->actionsEditable(),
         ];
     }
 };

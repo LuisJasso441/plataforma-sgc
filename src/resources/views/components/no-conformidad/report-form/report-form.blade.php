@@ -2,7 +2,7 @@
     <div class="mb-6">
         <flux:heading size="xl">Datos del reporte · {{ $nc->folio }}</flux:heading>
         <flux:subheading>
-            Pasos 3 a 7. La descripción y las acciones definitivas se editan en la captura de acciones.
+            Pasos 3 a 7. La descripción se edita en la captura de acciones.
             Si se sube una nueva versión del reporte, estos datos se reemplazan por los del archivo.
         </flux:subheading>
     </div>
@@ -85,7 +85,43 @@
                         </div>
                     </flux:checkbox.group>
 
-                    <flux:input wire:model="cambios_otro" label="Otro documento" />
+                   <flux:input wire:model="cambios_otro" label="Otro documento" />
+                </div>
+
+                <flux:separator />
+
+                {{-- Actividades que eliminarán el problema de raíz --}}
+                <div class="flex flex-col gap-4">
+                    <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        Actividades que eliminarán el problema de raíz
+                    </div>
+
+                    @if ($actionsEditable)
+                        @foreach ($acciones as $i => $accion)
+                            <div wire:key="accion-{{ $i }}" class="rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                                <div class="mb-3 flex items-center justify-between">
+                                    <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Acción {{ $i + 1 }}</div>
+                                    <flux:button size="sm" variant="ghost" icon="trash" wire:click="removeRow('acciones', {{ $i }})">Quitar</flux:button>
+                                </div>
+                                <div class="flex flex-col gap-3">
+                                    <flux:textarea wire:model="acciones.{{ $i }}.actividad" rows="2" label="Actividad / evidencia de realización" />
+                                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                        <flux:input wire:model="acciones.{{ $i }}.responsable" label="Responsable" />
+                                        <flux:input type="date" wire:model="acciones.{{ $i }}.fecha_compromiso" label="Fecha compromiso de cierre" />
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                        <div>
+                            <flux:button size="sm" icon="plus" wire:click="addRow('acciones')">Agregar acción</flux:button>
+                        </div>
+                    @elseif ($nc->stage === App\Enums\NcStage::CapturaAcciones)
+                        <flux:callout icon="information-circle"
+                            heading="Las acciones definitivas se editan en la captura de acciones del Paso 7, en la vista de la NC." />
+                    @else
+                        <flux:callout icon="lock-closed"
+                            heading="Las acciones definitivas ya están en implementación y no se pueden modificar." />
+                    @endif
                 </div>
 
                 <flux:separator />

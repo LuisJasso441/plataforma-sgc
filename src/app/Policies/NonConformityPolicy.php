@@ -77,10 +77,10 @@ class NonConformityPolicy
             || ($this->isLeader($user, $nc) && $nc->stage === NcStage::CapturaAcciones);
     }
 
+    /** Captura de acciones (descripción, acciones, envío a implementación): solo Calidad */
     public function manageActions(User $user, NonConformity $nc): bool
     {
-        return $this->isQuality($user)
-            || ($this->isLeader($user, $nc) && $nc->stage === NcStage::CapturaAcciones);
+        return $this->isQuality($user);
     }
 
     /** Uso: Gate::allows('uploadEvidence', [$nc, $action]) */
