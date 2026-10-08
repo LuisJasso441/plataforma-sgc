@@ -144,6 +144,26 @@ class NonConformity extends Model
         });
     }
 
+    /**
+     * Filtros de la bitácora (pantalla y exportación a Excel).
+     * Claves: search, status, process, year, department.
+     */
+    public function scopeFilter(Builder $query, array $filters): Builder
+    {
+        return $query
+            ->when($filters['search'] ?? null, function (Builder $q, string $search) {
+                $q->where(function (Builder $q) use ($search) {
+                    $q->where('folio', 'like', "%{$search}%")
+                      ->orWhere('initial_description', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+                });
+            })
+            ->when($filters['status'] ?? null, fn (Builder $q, $v) => $q->where('status', $v))
+            ->when($filters['process'] ?? null, fn (Builder $q, $v) => $q->where('nc_process_id', $v))
+            ->when($filters['year'] ?? null, fn (Builder $q, $v) => $q->where('folio_year', $v))
+            ->when($filters['department'] ?? null, fn (Builder $q, $v) => $q->where('department_id', $v));
+    }
+
     public function isVisibleTo(User $user): bool
     {
         return $user->isAdmin()

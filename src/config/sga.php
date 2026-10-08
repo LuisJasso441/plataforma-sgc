@@ -21,4 +21,20 @@ return [
         'fecha_revision' => '19/03/2022',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Bitácora de No Conformidades y Acciones Correctivas (FR-SG-05)
+    |--------------------------------------------------------------------------
+    | Valores FIJOS de la cintilla. El logo es el mismo del reporte.
+    | El nombre del archivo de la plantilla es también el nombre de descarga.
+    */
+
+    'bitacora_nc' => [
+        'plantilla'      => resource_path('templates/no-conformidad/FR-SG-05_Bitácora de no conformidades y acciones correctivas.xlsx'),
+
+        'codigo'         => 'FR-SG-05',
+        'revision'       => '00',
+        'fecha_revision' => '22/07/2021',
+    ],
+
 ];

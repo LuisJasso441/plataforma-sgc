@@ -27,6 +27,18 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
         }
     }
 
+    /** Filtros activos (se comparten con la exportación a Excel) */
+    protected function filters(): array
+    {
+        return array_filter([
+            'search'     => $this->search,
+            'status'     => $this->status,
+            'process'    => $this->process,
+            'year'       => $this->year,
+            'department' => $this->department,
+        ], fn ($v) => $v !== '' && $v !== null);
+    }
+
     public function clearFilters(): void
     {
         $this->reset(['search', 'status', 'process', 'year', 'department']);
@@ -40,17 +52,7 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
         $ncs = NonConformity::query()
             ->visibleTo($user)
             ->with(['process', 'subprocess', 'department', 'leader', 'issuer'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('folio', 'like', "%{$this->search}%")
-                      ->orWhere('initial_description', 'like', "%{$this->search}%")
-                      ->orWhere('description', 'like', "%{$this->search}%");
-                });
-            })
-            ->when($this->status, fn ($q) => $q->where('status', $this->status))
-            ->when($this->process, fn ($q) => $q->where('nc_process_id', $this->process))
-            ->when($this->year, fn ($q) => $q->where('folio_year', $this->year))
-            ->when($this->department, fn ($q) => $q->where('department_id', $this->department))
+            ->filter($this->filters())
             ->orderByDesc('folio_year')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
@@ -64,6 +66,7 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
             ->get();
 
         return [
+            'exportUrl'   => route('no-conformidad.bitacora.export', $this->filters()),
             'ncs'         => $ncs,
             'departments' => $departments,
             'statuses'  => NcStatus::cases(),

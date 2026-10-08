@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\NcAttachmentController;
+use App\Http\Controllers\NcBitacoraExportController;
 use App\Http\Controllers\NcReportDownloadController;
 use Illuminate\Support\Facades\Route;
 use Livewire\Volt\Volt;
@@ -33,6 +34,7 @@ Route::middleware(['auth', 'module:no-conformidad'])
     ->name('no-conformidad.')
     ->group(function () {
         Volt::route('/', 'no-conformidad.index')->name('index');
+        Route::get('bitacora/exportar', NcBitacoraExportController::class)->name('bitacora.export');
         Volt::route('crear', 'no-conformidad.form')->name('create');
         Volt::route('{nonConformity}', 'no-conformidad.show')->name('show')->whereNumber('nonConformity');
         Volt::route('{nonConformity}/editar', 'no-conformidad.form')->name('edit');

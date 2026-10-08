@@ -11,11 +11,18 @@
             <flux:heading size="xl">No Conformidad</flux:heading>
             <flux:subheading>Bitácora de no conformidades y acciones correctivas</flux:subheading>
         </div>
-        @can('create', App\Models\NonConformity::class)
-            <flux:button variant="primary" icon="plus" :href="route('no-conformidad.create')" wire:navigate>
-                Nueva NC
+        <div class="flex items-center gap-2">
+            {{-- Sin wire:navigate: es una descarga de archivo --}}
+            <flux:button icon="arrow-down-tray" :href="$exportUrl">
+                Exportar bitácora
             </flux:button>
-        @endcan
+
+            @can('create', App\Models\NonConformity::class)
+                <flux:button variant="primary" icon="plus" :href="route('no-conformidad.create')" wire:navigate>
+                    Nueva NC
+                </flux:button>
+            @endcan
+        </div>
     </div>
 
     {{-- Filtros --}}
