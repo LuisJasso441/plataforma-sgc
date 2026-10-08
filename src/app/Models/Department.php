@@ -108,4 +108,23 @@ class Department extends Model
         $this->update(['head_user_id' => $candidate?->id]);
     }
 
+    /** Colores de <flux:badge> para distinguir departamentos */
+    public const BADGE_COLORS = [
+        'red', 'orange', 'amber', 'yellow', 'lime', 'green', 'emerald', 'teal', 'cyan',
+        'sky', 'blue', 'indigo', 'violet', 'purple', 'fuchsia', 'pink', 'rose',
+    ];
+
+    /** @var array<int,int>|null  id => posición alfabética (una consulta por petición) */
+    private static ?array $badgeOrder = null;
+
+    /** Color fijo del departamento según su posición alfabética */
+    public function badgeColor(): string
+    {
+        self::$badgeOrder ??= static::orderBy('name')->pluck('id')->flip()->all();
+
+        $position = self::$badgeOrder[$this->id] ?? $this->id;
+
+        return self::BADGE_COLORS[$position % count(self::BADGE_COLORS)];
+    }
+
 }

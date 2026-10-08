@@ -19,7 +19,7 @@
     </div>
 
     {{-- Filtros --}}
-    <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-5">
+    <div class="mb-4 grid grid-cols-1 gap-3 md:grid-cols-6">
         <div class="md:col-span-2">
             <flux:input
                 wire:model.live.debounce.300ms="search"
@@ -32,6 +32,13 @@
             <flux:select.option value="">Todos los estatus</flux:select.option>
             @foreach ($statuses as $s)
                 <flux:select.option :value="$s->value">{{ $s->label() }}</flux:select.option>
+            @endforeach
+        </flux:select>
+
+        <flux:select wire:model.live="department" placeholder="Departamento">
+            <flux:select.option value="">Todos los departamentos</flux:select.option>
+            @foreach ($departments as $d)
+                <flux:select.option :value="$d->id">{{ $d->name }}</flux:select.option>
             @endforeach
         </flux:select>
 
@@ -84,9 +91,9 @@
                             <div>{{ $nc->process->name }}</div>
                             <div class="text-zinc-500 text-xs">{{ $nc->subprocess?->name ?? 'N. A.' }}</div>
                         </td>
-                        <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                            <div>{{ $nc->department->name }}</div>
-                            <div class="text-zinc-500 text-xs">{{ $nc->leader?->name ?? 'Sin líder asignado' }}</div>
+                       <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
+                            <flux:badge size="sm" :color="$nc->department->badgeColor()">{{ $nc->department->name }}</flux:badge>
+                            <div class="mt-1 text-zinc-500 text-xs">{{ $nc->leader?->name ?? 'Sin líder asignado' }}</div>
                         </td>
                         <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
                             {{ \Illuminate\Support\Str::limit($nc->description ?? $nc->initial_description, 120) }}

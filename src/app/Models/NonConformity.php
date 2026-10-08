@@ -156,36 +156,81 @@ class NonConformity extends Model
     /* ───────────── Folio ───────────── */
 
     /**
-     * Crea una NC asignando el folio AC-YY-NN de forma segura (bloqueo de fila).
+     * Crea una NC asignando el folio AC-YY-NN del CONSECUTIVO DE SU DEPARTAMENTO
+     * (cada departamento numera por separado, reinicia cada año).
      */
     public static function createWithFolio(array $attributes, ?Carbon $date = null): self
     {
         return DB::transaction(function () use ($attributes, $date) {
-            $year = (int) ($date ?? now())->format('Y');
-
-            DB::table('nc_folio_sequences')->insertOrIgnore([
-                'year'        => $year,
-                'last_number' => 0,
-            ]);
-
-            $sequence = DB::table('nc_folio_sequences')
-                ->where('year', $year)
-                ->lockForUpdate()
-                ->first();
-
-            $number = $sequence->last_number + 1;
-
-            DB::table('nc_folio_sequences')
-                ->where('year', $year)
-                ->update(['last_number' => $number]);
+            $year   = (int) ($date ?? now())->format('Y');
+            $number = self::nextFolioNumber((int) $attributes['department_id'], $year);
 
             return self::create(array_merge($attributes, [
                 'folio_year'   => $year,
                 'folio_number' => $number,
-                'folio'        => sprintf('AC-%02d-%02d', $year % 100, $number),
+                'folio'        => self::formatFolio($year, $number),
                 'stage'        => $attributes['stage'] ?? NcStage::Solicitada,
                 'status'       => $attributes['status'] ?? NcStatus::Abierta,
             ]));
+        });
+    }
+
+    /**
+     * Siguiente número del consecutivo (depto, año) con bloqueo de fila.
+     * Debe llamarse dentro de una transacción.
+     */
+    protected static function nextFolioNumber(int $departmentId, int $year): int
+    {
+        DB::table('nc_folio_sequences')->insertOrIgnore([
+            'department_id' => $departmentId,
+            'year'          => $year,
+            'last_number'   => 0,
+        ]);
+
+        $sequence = DB::table('nc_folio_sequences')
+            ->where('department_id', $departmentId)
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->first();
+
+        $number = $sequence->last_number + 1;
+
+        DB::table('nc_folio_sequences')
+            ->where('department_id', $departmentId)
+            ->where('year', $year)
+            ->update(['last_number' => $number]);
+
+        return $number;
+    }
+
+    public static function formatFolio(int $year, int $number): string
+    {
+        return sprintf('AC-%02d-%02d', $year % 100, $number);
+    }
+
+    /**
+     * Cambia la NC de departamento tomando el siguiente folio del nuevo departamento.
+     * Devuelve el folio anterior, o null si el departamento no cambió.
+     */
+    public function moveToDepartment(int $departmentId): ?string
+    {
+        if ($departmentId === (int) $this->department_id) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($departmentId) {
+            $previous = $this->folio;
+            $number   = self::nextFolioNumber($departmentId, (int) $this->folio_year);
+
+            $this->update([
+                'department_id' => $departmentId,
+                'folio_number'  => $number,
+                'folio'         => self::formatFolio((int) $this->folio_year, $number),
+            ]);
+
+            $this->log('folio_reasignado', "Cambio de departamento: {$previous} → {$this->folio}");
+
+            return $previous;
         });
     }
 

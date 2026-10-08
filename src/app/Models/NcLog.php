@@ -54,6 +54,7 @@ class NcLog extends Model
             'nueva_accion'            => 'Nueva acción abierta',
             'creada_por_no_efectiva'  => 'Abierta por NC no efectiva',
             'reporte_editado'         => 'Datos del reporte editados en la plataforma',
+            'folio_reasignado'        => 'Folio reasignado por cambio de departamento',
             default     => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }

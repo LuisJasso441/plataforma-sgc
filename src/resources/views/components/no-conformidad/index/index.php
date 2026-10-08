@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\NcStatus;
+use App\Models\Department;
 use App\Models\NcProcess;
 use App\Models\NonConformity;
 use Livewire\Attributes\Layout;
@@ -16,18 +17,19 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
     public string $status = '';
     public string $process = '';
     public string $year = '';
+    public string $department = '';
 
     /** Cualquier filtro regresa a la página 1 */
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'status', 'process', 'year'], true)) {
+        if (in_array($property, ['search', 'status', 'process', 'year', 'department'], true)) {
             $this->resetPage();
         }
     }
 
     public function clearFilters(): void
     {
-        $this->reset(['search', 'status', 'process', 'year']);
+        $this->reset(['search', 'status', 'process', 'year', 'department']);
         $this->resetPage();
     }
 
@@ -48,12 +50,22 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->process, fn ($q) => $q->where('nc_process_id', $this->process))
             ->when($this->year, fn ($q) => $q->where('folio_year', $this->year))
+            ->when($this->department, fn ($q) => $q->where('department_id', $this->department))
             ->orderByDesc('folio_year')
-            ->orderByDesc('folio_number')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(15);
 
+        // En el filtro, cada quien ve solo los departamentos que puede consultar
+        $departments = Department::query()
+            ->when(! $user->isAdmin() && ! $user->isCalidad(),
+                fn ($q) => $q->whereIn('id', $user->visibleDepartmentIds()))
+            ->orderBy('name')
+            ->get();
+
         return [
-            'ncs'       => $ncs,
+            'ncs'         => $ncs,
+            'departments' => $departments,
             'statuses'  => NcStatus::cases(),
             'processes' => NcProcess::active()->get(),
             'years'     => NonConformity::query()->visibleTo($user)

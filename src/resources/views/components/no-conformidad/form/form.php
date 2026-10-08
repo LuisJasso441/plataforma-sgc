@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\NcProcess;
 use App\Models\NcSubprocess;
 use App\Models\NonConformity;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -71,7 +72,10 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
 
             $message = DB::transaction(function () use ($data) {
                 $from = $this->nc->stage;
-                $this->nc->update($data);
+
+                // Si cambia el departamento, toma el siguiente folio del nuevo departamento
+                $this->nc->moveToDepartment((int) $data['department_id']);
+                $this->nc->update(Arr::except($data, ['department_id']));
 
                 // Corrección del emisor: regresa a Calidad
                 if ($from === NcStage::DevueltaEmisor) {
