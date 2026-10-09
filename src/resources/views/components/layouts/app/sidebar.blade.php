@@ -1,6 +1,7 @@
 @php
     $user = auth()->user();
     $userSubtitle = $user->roleLabel() . ($user->department ? ' · ' . $user->department->name : '');
+    $unreadNotifications = $user->unreadNotifications()->count();
 
     // Módulos activos del SGA (cambian muy poco: caché de 10 minutos)
     $sidebarModules = \Illuminate\Support\Facades\Cache::remember('sidebar.modules', 600,
@@ -24,6 +25,11 @@
                 <flux:navlist.group heading="Plataforma" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         Inicio
+                    </flux:navlist.item>
+
+                    <flux:navlist.item icon="bell" :href="route('notificaciones.index')" :current="request()->routeIs('notificaciones.*')"
+                        :badge="$unreadNotifications ?: null" wire:navigate>
+                        Notificaciones
                     </flux:navlist.item>
 
                     {{-- Módulos del SGA: se muestran solo si el usuario tiene acceso y la ruta existe --}}

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Carbon;
+use App\Support\NcNotifier;
 use Illuminate\Support\Facades\DB;
 
 class NonConformity extends Model
@@ -307,7 +308,7 @@ class NonConformity extends Model
         array $meta = [],
         ?User $user = null,
     ): NcLog {
-        return $this->logs()->create([
+        $log = $this->logs()->create([
             'user_id'    => $user?->id ?? auth()->id(),
             'event'      => $event,
             'from_stage' => $from?->value,
@@ -315,5 +316,10 @@ class NonConformity extends Model
             'comment'    => $comment,
             'meta'       => $meta ?: null,
         ]);
+
+        // Avisos por correo y en la plataforma (se envían al confirmar la transacción)
+        NcNotifier::forLog($log);
+
+        return $log;
     }
 }

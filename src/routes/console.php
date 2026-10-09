@@ -1,15 +1,17 @@
 <?php
 
+use App\Enums\NcActionStatus;
 use App\Enums\NcStage;
 use App\Enums\NcStatus;
+use App\Models\NcAction;
 use App\Models\NonConformity;
-use Illuminate\Foundation\Inspiring;
+use App\Models\User;
+use App\Notifications\NcDailyDigest;
+use App\Support\NcNotifier;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Str;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
 
 /**
  * No Conformidad: recalcula el estatus de bitácora (Abierta / Vencida)
@@ -47,4 +49,80 @@ Artisan::command('nc:refresh-status', function () {
     $this->info("Estatus recalculados. NC con cambio: {$changed}. Verificaciones pendientes nuevas: {$due->count()}");
 })->purpose('Recalcula el estatus de bitácora y detecta verificaciones de efectividad pendientes');
 
-Schedule::command('nc:refresh-status')->dailyAt('00:05');
+Schedule::command('nc:refresh-status')
+    ->dailyAt('00:05')
+    ->name('nc:refresh-status')
+    ->withoutOverlapping();
+
+/**
+ * Resumen diario: un correo por persona con sus pendientes.
+ *  - Líder: sus acciones vencidas y las que vencen en 3 días.
+ *  - Calidad: todas las acciones vencidas y las verificaciones pendientes.
+ */
+Artisan::command('nc:daily-digest', function () {
+    $today = today();
+
+    $actions = NcAction::query()
+        ->where('status', '!=', NcActionStatus::Validada->value)
+        ->whereDate('commitment_date', '<=', $today->copy()->addDays(3))
+        ->whereHas('nonConformity', fn ($q) => $q->where('stage', NcStage::EnImplementacion->value))
+        ->with(['nonConformity.department', 'nonConformity.leader'])
+        ->orderBy('commitment_date')
+        ->get();
+
+    $verifications = NonConformity::query()
+        ->where('stage', NcStage::EnVerificacion->value)
+        ->whereDate('verification_date', '<=', $today)
+        ->with('department')
+        ->orderBy('verification_date')
+        ->get();
+
+    $quality = NcNotifier::quality();
+    $perUser = [];
+
+    $add = function (User $user, string $section, NonConformity $nc, string $detail, $date) use (&$perUser) {
+        $key = "{$nc->id}|{$detail}"; // evita repetir si alguien es Calidad y líder a la vez
+        $perUser[$user->id]['user'] = $user;
+        $perUser[$user->id]['sections'][$section][$key] = [
+            'folio'      => $nc->folio,
+            'department' => $nc->department->name,
+            'detail'     => $detail,
+            'date'       => $date->format('d/m/Y'),
+            'url'        => route('no-conformidad.show', $nc),
+        ];
+    };
+
+    foreach ($actions as $action) {
+        $nc      = $action->nonConformity;
+        $overdue = $action->commitment_date->lt($today);
+        $section = $overdue ? 'vencidas' : 'proximas';
+        $detail  = "Acción {$action->number}: " . Str::limit($action->activity, 80);
+
+        if ($nc->leader?->active) {
+            $add($nc->leader, $section, $nc, $detail, $action->commitment_date);
+        }
+        if ($overdue) {
+            foreach ($quality as $user) {
+                $add($user, $section, $nc, $detail, $action->commitment_date);
+            }
+        }
+    }
+
+    foreach ($verifications as $nc) {
+        foreach ($quality as $user) {
+            $add($user, 'verificaciones', $nc, 'Verificación de efectividad', $nc->verification_date);
+        }
+    }
+
+    foreach ($perUser as ['user' => $user, 'sections' => $sections]) {
+        $user->notify(new NcDailyDigest(array_map('array_values', $sections)));
+    }
+
+    $this->info('Resúmenes enviados: ' . count($perUser));
+})->purpose('Envía el resumen diario de pendientes de No Conformidad');
+
+Schedule::command('nc:daily-digest')
+    ->weekdays()
+    ->at('07:00')
+    ->name('nc:daily-digest')
+    ->withoutOverlapping();
