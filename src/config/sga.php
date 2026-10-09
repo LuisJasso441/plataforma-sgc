@@ -11,9 +11,20 @@ return [
     | el recuadro del logo muestra "EDITAR INFO".
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Logo de la empresa en la PLATAFORMA (LOGO PENDIENTE)
+    |--------------------------------------------------------------------------
+    | Ruta relativa a public/. Solo se usa en la interfaz web (login).
+    | Los formatos de Excel usan su propio logo (reporte_nc.logo).
+    */
+
+    'logo_empresa' => 'images/logo-empresa.png',
+
     'reporte_nc' => [
         // El nombre de este archivo es también el nombre de descarga: "<nombre>_<folio>.xlsx"
         'plantilla'      => resource_path('templates/no-conformidad/FR-SG-06_Reporte de no conformidad y acción correctiva.xlsx'),
+        // Logo de los formatos de Excel (reporte y bitácora)
         'logo'           => resource_path('templates/no-conformidad/logo.png'),
 
         'codigo'         => 'FR-SG-06',
