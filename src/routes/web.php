@@ -9,8 +9,8 @@ use Livewire\Volt\Volt;
 // Sin portada: al login, o al panel si ya hay sesión
 Route::get('/', fn () => redirect()->route(auth()->check() ? 'dashboard' : 'login'))->name('home');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
+Volt::route('dashboard', 'inicio.index')
+    ->middleware(['auth'])
     ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
