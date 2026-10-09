@@ -23,16 +23,24 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
+    /* Paleta VerdenSGA */
+    --color-verden-mint: #7ED9C8;
+    --color-verden-green: #038C65;
+    --color-verden-forest: #014017;
+    --color-verden-ink: #0D0D0D;
+
+    /* Acento de Flux: verde en claro */
+    --color-accent: var(--color-verden-green);
+    --color-accent-content: var(--color-verden-green);
     --color-accent-foreground: var(--color-white);
 }
 
 @layer theme {
+    /* En oscuro el verde pierde contraste: se usa la menta con texto verde bosque */
     .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+        --color-accent: var(--color-verden-mint);
+        --color-accent-content: var(--color-verden-mint);
+        --color-accent-foreground: var(--color-verden-forest);
     }
 }
 

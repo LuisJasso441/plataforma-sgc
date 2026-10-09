@@ -32,7 +32,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'username' => __('auth.failed'),
+                'username' => 'Usuario o contraseña incorrectos, o la cuenta está desactivada.',
             ]);
         }
 
@@ -56,11 +56,16 @@ new #[Layout('components.layouts.auth')] class extends Component {
         $seconds = RateLimiter::availableIn($this->throttleKey());
 
         throw ValidationException::withMessages([
-            'email' => __('auth.throttle', [
-                'seconds' => $seconds,
-                'minutes' => ceil($seconds / 60),
-            ]),
+            'username' => 'Demasiados intentos. Vuelve a intentarlo en ' . ceil($seconds / 60) . ' minuto(s).',
         ]);
+    }
+
+    protected function messages(): array
+    {
+        return [
+            'username.required' => 'Escribe tu usuario.',
+            'password.required' => 'Escribe tu contraseña.',
+        ];
     }
 
     /**
@@ -72,34 +77,27 @@ new #[Layout('components.layouts.auth')] class extends Component {
     }
 }; ?>
 
-<div class="flex flex-col gap-6">
-    <x-auth-header title="Log in to your account" description="Enter your email and password below to log in" />
+<div class="flex flex-col gap-8">
+    <div>
+        <flux:heading size="xl">Iniciar sesión</flux:heading>
+        <flux:subheading>Ingresa tu usuario y contraseña para continuar.</flux:subheading>
+    </div>
 
-    <!-- Session Status -->
-    <x-auth-session-status class="text-center" :status="session('status')" />
+    <x-auth-session-status :status="session('status')" />
 
     <form wire:submit="login" class="flex flex-col gap-6">
-        <!-- Email Address -->
-        <flux:input wire:model="username" label="{{ __('Usuario') }}" type="text" name="username" required autofocus autocomplete="username" placeholder="usuario" />
+        <flux:input wire:model="username" label="Usuario" type="text" name="username"
+            required autofocus autocomplete="username" placeholder="tu.usuario" />
 
-        <!-- Password -->
-        <div class="relative">
-            <flux:input
-                wire:model="password"
-                label="{{ __('Password') }}"
-                type="password"
-                name="password"
-                required
-                autocomplete="current-password"
-                placeholder="Password"
-            />
-        </div>
+        <flux:input wire:model="password" label="Contraseña" type="password" name="password"
+            required autocomplete="current-password" placeholder="••••••••" viewable />
 
-        <!-- Remember Me -->
-        <flux:checkbox wire:model="remember" label="{{ __('Remember me') }}" />
+        <flux:checkbox wire:model="remember" label="Recordarme en este equipo" />
 
-        <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>
-        </div>
+        <flux:button variant="primary" type="submit" class="w-full">Iniciar sesión</flux:button>
     </form>
+
+    <flux:text class="text-xs">
+        ¿No tienes acceso u olvidaste tu contraseña? Solicítalo al área de Sistemas.
+    </flux:text>
 </div>
