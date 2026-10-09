@@ -1,6 +1,7 @@
 services:
   web:
     build: .
+    image: sga-web
     container_name: sga_web
     ports:
       - "8090:80"          # navegas en http://localhost:8090
@@ -9,6 +10,41 @@ services:
       - ./src:/var/www/html
     depends_on:
       - db
+      - mailpit
+
+  # Tareas programadas de Laravel (routes/console.php)
+  scheduler:
+    build: .
+    image: sga-web
+    container_name: sga_scheduler
+    user: www-data
+    command: php artisan schedule:work
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # Worker de colas: envía correos y notificaciones en segundo plano
+  queue:
+    build: .
+    image: sga-web
+    container_name: sga_queue
+    user: www-data
+    command: php artisan queue:work --tries=3 --backoff=30 --sleep=3
+    volumes:
+      - ./src:/var/www/html
+    depends_on:
+      - db
+      - mailpit
+    restart: unless-stopped
+
+  # Buzón de pruebas: atrapa todos los correos (no salen a internet)
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: sga_mailpit
+    ports:
+      - "8025:8025"        # bandeja web en http://localhost:8025
 
   db:
     image: mariadb:11
