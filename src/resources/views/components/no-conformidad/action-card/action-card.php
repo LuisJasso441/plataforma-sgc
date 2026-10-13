@@ -137,6 +137,123 @@ new class extends Component
         $this->backWith('status', "Evidencia de la acción {$this->action->number} rechazada. El líder deberá subir nuevas evidencias.");
     }
 
+    // Edición por Calidad (acciones no validadas)
+    public string $editActivity = '';
+    public string $editResponsible = '';
+    public string $editDate = '';
+
+    public function mount(NcAction $action): void
+    {
+        $this->action          = $action;
+        $this->editActivity    = $action->activity;
+        $this->editResponsible = $action->responsible;
+        $this->editDate        = $action->commitment_date->format('Y-m-d');
+    }
+
+    /** Calidad corrige actividad, responsable o fecha compromiso */
+    public function saveEdit(): void
+    {
+        $nc = $this->action->nonConformity;
+
+        Gate::authorize('editImplementationActions', $nc);
+
+        if ($this->action->status === NcActionStatus::Validada) {
+            $this->backWith('error', 'Una acción validada ya no se puede modificar.');
+            return;
+        }
+
+        $this->validate([
+            'editActivity'    => ['required', 'string', 'max:2000'],
+            'editResponsible' => ['required', 'string', 'max:150'],
+            'editDate'        => ['required', 'date', 'after_or_equal:' . $nc->trigger_date->format('Y-m-d')],
+        ], [], [
+            'editActivity'    => 'actividad',
+            'editResponsible' => 'responsable',
+            'editDate'        => 'fecha compromiso',
+        ]);
+
+        $changes = [];
+        if (trim($this->editActivity) !== $this->action->activity) {
+            $changes[] = 'actividad';
+        }
+        if (trim($this->editResponsible) !== $this->action->responsible) {
+            $changes[] = 'responsable: ' . trim($this->editResponsible);
+        }
+        if ($this->editDate !== $this->action->commitment_date->format('Y-m-d')) {
+            $changes[] = 'fecha compromiso ' . $this->action->commitment_date->format('d/m/Y')
+                . ' → ' . \Illuminate\Support\Carbon::parse($this->editDate)->format('d/m/Y');
+        }
+
+        if (! $changes) {
+            $this->backWith('status', 'No hubo cambios en la acción.');
+            return;
+        }
+
+        DB::transaction(function () use ($nc, $changes) {
+            $this->action->update([
+                'activity'        => trim($this->editActivity),
+                'responsible'     => trim($this->editResponsible),
+                'commitment_date' => $this->editDate,
+            ]);
+
+            $nc->refreshDates();
+            $nc->refreshStatus();
+            $nc->log('acciones_modificadas', "Acción {$this->action->number}: " . implode(' · ', $changes));
+        });
+
+        $this->backWith('status', "Acción {$this->action->number} actualizada.");
+    }
+
+    /** Calidad quita una acción sin evidencias (las siguientes se renumeran) */
+    public function removeAction(): void
+    {
+        $nc = $this->action->nonConformity;
+
+        Gate::authorize('editImplementationActions', $nc);
+
+        if ($this->action->status === NcActionStatus::Validada || $this->action->evidences()->exists()) {
+            $this->backWith('error', 'Solo se pueden quitar acciones sin evidencias.');
+            return;
+        }
+
+        if ($nc->actions()->count() <= 1) {
+            $this->backWith('error', 'La NC debe conservar al menos una acción definitiva.');
+            return;
+        }
+
+        $number    = $this->action->number;
+        $activity  = \Illuminate\Support\Str::limit($this->action->activity, 80);
+        $completed = false;
+
+        DB::transaction(function () use ($nc, $number, $activity, &$completed) {
+            $this->action->delete();
+
+            foreach ($nc->actions()->where('number', '>', $number)->get() as $next) {
+                $next->update(['number' => $next->number - 1]);
+            }
+
+            $nc->refreshDates();
+            $nc->log('acciones_modificadas', "Acción {$number} eliminada: {$activity}");
+
+            // Si las que quedan ya están todas validadas, la implementación terminó
+            if ($nc->actual_close_date && $nc->stage === NcStage::EnImplementacion) {
+                $nc->update(['stage' => NcStage::EnVerificacion]);
+                $nc->log('implementacion_completa', sprintf(
+                    'Cierre real: %s · Verificación de efectividad: %s',
+                    $nc->actual_close_date->format('d/m/Y'),
+                    $nc->verification_date->format('d/m/Y'),
+                ), NcStage::EnImplementacion, NcStage::EnVerificacion);
+                $completed = true;
+            }
+
+            $nc->refreshStatus();
+        });
+
+        $this->backWith('status', $completed
+            ? "Acción {$number} eliminada. Las acciones restantes ya estaban validadas: la NC pasó a verificación."
+            : "Acción {$number} eliminada.");
+    }
+
     protected function backWith(string $type, string $message): void
     {
         session()->flash($type, $message);

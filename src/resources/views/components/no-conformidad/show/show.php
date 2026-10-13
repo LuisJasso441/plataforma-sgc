@@ -20,6 +20,10 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
     // Diálogo "Devolver"
     public string $returnReason = '';
 
+    // Diálogo "Reasignar líder"
+    public ?int $newLeaderId = null;
+    public string $reassignReason = '';
+
     public function mount(NonConformity $nonConformity): void
     {
         Gate::authorize('view', $nonConformity);
@@ -100,6 +104,43 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
         });
 
         $this->backWith('status', "NC {$this->nc->folio} devuelta al emisor para corrección.");
+    }
+
+    /**
+     * Calidad o el jefe del departamento responsable cambian el líder de solución.
+     */
+    public function reassignLeader(): void
+    {
+        Gate::authorize('reassignLeader', $this->nc);
+
+        $this->validate([
+            'newLeaderId' => [
+                'required',
+                Rule::exists('users', 'id')->whereIn('role', ['user', 'calidad'])->where('active', true),
+                Rule::notIn([$this->nc->leader_id]),
+            ],
+            'reassignReason' => ['required', 'string', 'min:10', 'max:1000'],
+        ], [
+            'newLeaderId.required' => 'Selecciona el nuevo líder.',
+            'newLeaderId.not_in'   => 'Selecciona a alguien distinto del líder actual.',
+        ], [
+            'reassignReason' => 'motivo',
+        ]);
+
+        $previous = $this->nc->leader;
+        $new      = User::find($this->newLeaderId);
+
+        DB::transaction(function () use ($previous, $new) {
+            $this->nc->update(['leader_id' => $new->id]);
+
+            $this->nc->log(
+                'lider_reasignado',
+                sprintf('%s → %s. Motivo: %s', $previous?->name ?? 'Sin líder', $new->name, trim($this->reassignReason)),
+                meta: ['previous_leader_id' => $previous?->id],
+            );
+        });
+
+        $this->backWith('status', "Líder de solución de {$this->nc->folio}: {$new->name}.");
     }
 
     /** Recarga la vista (cierra diálogos) con un mensaje flash */

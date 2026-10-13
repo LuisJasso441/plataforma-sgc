@@ -109,4 +109,21 @@ class NonConformityPolicy
     {
         return $this->isQuality($user);
     }
+
+    /** Reasignar líder: Calidad o el jefe del depto. responsable, de la aceptación al cierre */
+    public function reassignLeader(User $user, NonConformity $nc): bool
+    {
+        if (! $nc->stage->reached(NcStage::PendienteReporte) || $nc->stage->isFinal()) {
+            return false;
+        }
+
+        return $this->isQuality($user)
+            || ($user->active && $nc->department->effectiveHead()?->id === $user->id);
+    }
+
+    /** Editar, agregar o quitar acciones ya en implementación: solo Calidad */
+    public function editImplementationActions(User $user, NonConformity $nc): bool
+    {
+        return $this->isQuality($user) && $nc->stage === NcStage::EnImplementacion;
+    }
 }

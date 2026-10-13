@@ -62,6 +62,13 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
         ];
     }
 
+    /** El departamento solo se puede cambiar antes de que Calidad acepte la NC */
+    protected function departmentEditable(): bool
+    {
+        return ! $this->nc
+            || in_array($this->nc->stage, [NcStage::Solicitada, NcStage::DevueltaEmisor], true);
+    }
+
     public function save(): void
     {
         $data = $this->validate();
@@ -73,8 +80,10 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
             $message = DB::transaction(function () use ($data) {
                 $from = $this->nc->stage;
 
-                // Si cambia el departamento, toma el siguiente folio del nuevo departamento
-                $this->nc->moveToDepartment((int) $data['department_id']);
+                // Si cambia el departamento (solo antes de aceptar), toma el siguiente folio del nuevo depto.
+                if ($this->departmentEditable()) {
+                    $this->nc->moveToDepartment((int) $data['department_id']);
+                }
                 $this->nc->update(Arr::except($data, ['department_id']));
 
                 // Corrección del emisor: regresa a Calidad
@@ -117,6 +126,7 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
             : null;
 
         return [
+            'departmentLocked'   => ! $this->departmentEditable(),
             'processes'          => NcProcess::active()->get(),
             'subprocesses'       => NcSubprocess::active()->get(),
             'departments'        => Department::where('active', true)->orderBy('name')->get(),

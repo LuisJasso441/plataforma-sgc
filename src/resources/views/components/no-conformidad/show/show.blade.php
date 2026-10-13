@@ -42,6 +42,12 @@
                 </flux:button>
             @endcan
 
+            @can('reassignLeader', $nc)
+                <flux:modal.trigger name="reasignar-lider">
+                    <flux:button icon="user-circle">Reasignar líder</flux:button>
+                </flux:modal.trigger>
+            @endcan
+
             @can('review', $nc)
                 @if ($nc->stage === NcStage::Solicitada)
                     <flux:modal.trigger name="devolver-nc">
@@ -441,6 +447,41 @@
                         <flux:button variant="ghost">Cancelar</flux:button>
                     </flux:modal.close>
                     <flux:button type="submit" variant="danger">Devolver</flux:button>
+                </div>
+            </form>
+        </flux:modal>
+    @endcan
+
+    {{-- Diálogo: Reasignar líder (Calidad o jefe del departamento) --}}
+    @can('reassignLeader', $nc)
+        <flux:modal name="reasignar-lider" class="md:w-[32rem]">
+            <form wire:submit="reassignLeader" class="space-y-6">
+                <div>
+                    <flux:heading size="lg">Reasignar líder de {{ $nc->folio }}</flux:heading>
+                    <flux:text class="mt-2">
+                        Líder actual: <strong>{{ $nc->leader?->name ?? 'Sin líder' }}</strong>.
+                        El nuevo líder recibirá un aviso y continuará el seguimiento desde la etapa actual.
+                    </flux:text>
+                </div>
+
+                <flux:select wire:model="newLeaderId" label="Nuevo líder de solución" placeholder="Selecciona un usuario...">
+                    @foreach ($leaders as $leader)
+                        @continue($leader->id === $nc->leader_id)
+                        <flux:select.option :value="$leader->id">
+                            {{ $leader->name }} — {{ $leader->department?->name ?? 'Sin depto.' }}
+                        </flux:select.option>
+                    @endforeach
+                </flux:select>
+
+                <flux:textarea wire:model="reassignReason" label="Motivo" rows="3"
+                    placeholder="Ej. el líder actual cambió de área / se delega a quien atiende la causa..." />
+
+                <div class="flex gap-2">
+                    <flux:spacer />
+                    <flux:modal.close>
+                        <flux:button variant="ghost">Cancelar</flux:button>
+                    </flux:modal.close>
+                    <flux:button type="submit" variant="primary">Reasignar</flux:button>
                 </div>
             </form>
         </flux:modal>

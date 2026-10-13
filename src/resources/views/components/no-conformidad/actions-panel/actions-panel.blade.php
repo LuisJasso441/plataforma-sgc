@@ -120,6 +120,40 @@
                     <livewire:no-conformidad.action-card :action="$action" :key="'action-card-'.$action->id" />
                 @endforeach
             </div>
+
+            {{-- Calidad puede agregar acciones durante la implementación --}}
+            @can('editImplementationActions', $nc)
+                <div class="mt-4">
+                    <flux:modal.trigger name="agregar-accion">
+                        <flux:button size="sm" icon="plus">Agregar acción</flux:button>
+                    </flux:modal.trigger>
+                </div>
+
+                <flux:modal name="agregar-accion" class="md:w-[36rem]">
+                    <form wire:submit="addImplementationAction" class="space-y-6">
+                        <div>
+                            <flux:heading size="lg">Agregar acción definitiva</flux:heading>
+                            <flux:text class="mt-2">Se agregará como acción {{ $savedActions->count() + 1 }}. Las fechas de implementación y verificación se recalculan.</flux:text>
+                        </div>
+
+                        <flux:textarea wire:model="newActivity" label="Actividad / evidencia de realización" rows="3" />
+
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <flux:input wire:model="newResponsible" label="Responsable" />
+                            <flux:input type="date" wire:model="newDate" label="Fecha compromiso"
+                                :min="$nc->trigger_date?->format('Y-m-d')" />
+                        </div>
+
+                        <div class="flex gap-2">
+                            <flux:spacer />
+                            <flux:modal.close>
+                                <flux:button variant="ghost">Cancelar</flux:button>
+                            </flux:modal.close>
+                            <flux:button type="submit" variant="primary">Agregar</flux:button>
+                        </div>
+                    </form>
+                </flux:modal>
+            @endcan
         @else
             <div class="overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
                 <table class="w-full text-sm text-left">

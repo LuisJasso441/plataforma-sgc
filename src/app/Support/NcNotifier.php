@@ -31,6 +31,8 @@ class NcNotifier
         'verificada_efectiva'     => ['emisor', 'lider'],
         'verificada_no_efectiva'  => ['emisor', 'lider'],
         'creada_por_no_efectiva'  => ['lider'],
+        'lider_reasignado'        => ['lider', 'lider_anterior'],
+        'acciones_modificadas'    => ['lider'],
     ];
 
     public static function forLog(NcLog $log): void
@@ -44,7 +46,7 @@ class NcNotifier
         $nc = NonConformity::with(['leader', 'issuer'])->find($log->non_conformity_id);
 
         $recipients = collect($roles)
-            ->flatMap(fn (string $role) => self::resolve($nc, $role))
+            ->flatMap(fn (string $role) => self::resolve($nc, $role, $log))
             ->filter(fn (?User $u) => $u && $u->active && $u->id !== $log->user_id) // nunca a quien hizo la acción
             ->unique('id')
             ->values();
@@ -59,13 +61,14 @@ class NcNotifier
         return User::where('role', 'calidad')->where('active', true)->get();
     }
 
-    protected static function resolve(NonConformity $nc, string $role): Collection
+    protected static function resolve(NonConformity $nc, string $role, NcLog $log): Collection
     {
         return match ($role) {
-            'calidad' => self::quality(),
-            'lider'   => collect([$nc->leader]),
-            'emisor'  => collect([$nc->issuer]),
-            default   => collect(),
+            'calidad'        => self::quality(),
+            'lider'          => collect([$nc->leader]),
+            'emisor'         => collect([$nc->issuer]),
+            'lider_anterior' => collect([User::find($log->meta['previous_leader_id'] ?? null)]),
+            default          => collect(),
         };
     }
 }

@@ -45,7 +45,9 @@
         </div>
 
         <div>
-            <flux:select wire:model.live="department_id" label="Departamento de la NC (responsable)" placeholder="Selecciona un área...">
+            <flux:select wire:model.live="department_id" label="Departamento de la NC (responsable)" placeholder="Selecciona un área..."
+                :disabled="$departmentLocked"
+                :description="$departmentLocked ? 'Bloqueado: la NC ya fue aceptada. Si el departamento es incorrecto, cierra esta NC y levanta una nueva.' : null">
                 @foreach ($departments as $department)
                     <flux:select.option :value="$department->id">{{ $department->name }}</flux:select.option>
                 @endforeach

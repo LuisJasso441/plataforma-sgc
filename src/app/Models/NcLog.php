@@ -55,6 +55,8 @@ class NcLog extends Model
             'creada_por_no_efectiva'  => 'Abierta por NC no efectiva',
             'reporte_editado'         => 'Datos del reporte editados en la plataforma',
             'folio_reasignado'        => 'Folio reasignado por cambio de departamento',
+            'lider_reasignado'        => 'Líder de solución reasignado',
+            'acciones_modificadas'    => 'Acciones definitivas modificadas por Calidad',
             default     => ucfirst(str_replace('_', ' ', $this->event)),
         };
     }

@@ -91,6 +91,43 @@ new class extends Component
         ];
     }
 
+    // Acción nueva durante la implementación (Calidad)
+    public string $newActivity = '';
+    public string $newResponsible = '';
+    public string $newDate = '';
+
+    public function addImplementationAction(): void
+    {
+        Gate::authorize('editImplementationActions', $this->nc);
+
+        $this->validate([
+            'newActivity'    => ['required', 'string', 'max:2000'],
+            'newResponsible' => ['required', 'string', 'max:150'],
+            'newDate'        => ['required', 'date', 'after_or_equal:' . $this->nc->trigger_date->format('Y-m-d')],
+        ], [], [
+            'newActivity'    => 'actividad',
+            'newResponsible' => 'responsable',
+            'newDate'        => 'fecha compromiso',
+        ]);
+
+        DB::transaction(function () {
+            $number = (int) $this->nc->actions()->max('number') + 1;
+
+            $this->nc->actions()->create([
+                'number'          => $number,
+                'activity'        => trim($this->newActivity),
+                'responsible'     => trim($this->newResponsible),
+                'commitment_date' => $this->newDate,
+            ]);
+
+            $this->nc->refreshDates();
+            $this->nc->refreshStatus();
+            $this->nc->log('acciones_modificadas', "Acción {$number} agregada: " . \Illuminate\Support\Str::limit(trim($this->newActivity), 80));
+        });
+
+        $this->backWith('status', 'Acción agregada. El líder ya puede subir sus evidencias.');
+    }
+
     public function saveDraft(): void
     {
         $this->persist(submit: false);

@@ -2,7 +2,22 @@
     {{-- Encabezado --}}
     <div class="flex flex-wrap items-center justify-between gap-2">
         <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100">Acción {{ $action->number }}</div>
-        <flux:badge size="sm" :color="$action->status->color()">{{ $action->status->label() }}</flux:badge>
+        <div class="flex items-center gap-1">
+            @if ($action->status !== App\Enums\NcActionStatus::Validada)
+                @can('editImplementationActions', $nc)
+                    <flux:modal.trigger name="editar-accion-{{ $action->id }}">
+                        <flux:button size="xs" variant="ghost" icon="pencil-square">Editar</flux:button>
+                    </flux:modal.trigger>
+                    @if ($evidences->isEmpty())
+                        <flux:button size="xs" variant="ghost" icon="trash" wire:click="removeAction"
+                            wire:confirm="¿Quitar la acción {{ $action->number }}? Las siguientes se renumerarán.">
+                            Quitar
+                        </flux:button>
+                    @endif
+                @endcan
+            @endif
+            <flux:badge size="sm" :color="$action->status->color()">{{ $action->status->label() }}</flux:badge>
+        </div>
     </div>
 
     <div class="mt-2 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-line">{{ $action->activity }}</div>
@@ -113,5 +128,35 @@
                 </div>
             </form>
         </flux:modal>
+    @endif
+
+    {{-- Edición por Calidad --}}
+    @if ($action->status !== App\Enums\NcActionStatus::Validada)
+        @can('editImplementationActions', $nc)
+            <flux:modal name="editar-accion-{{ $action->id }}" class="md:w-[36rem]">
+                <form wire:submit="saveEdit" class="space-y-6">
+                    <div>
+                        <flux:heading size="lg">Editar acción {{ $action->number }}</flux:heading>
+                        <flux:text class="mt-2">El líder recibirá un aviso con los cambios. Las fechas de implementación y verificación se recalculan.</flux:text>
+                    </div>
+
+                    <flux:textarea wire:model="editActivity" label="Actividad / evidencia de realización" rows="3" />
+
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <flux:input wire:model="editResponsible" label="Responsable" />
+                        <flux:input type="date" wire:model="editDate" label="Fecha compromiso"
+                            :min="$nc->trigger_date?->format('Y-m-d')" />
+                    </div>
+
+                    <div class="flex gap-2">
+                        <flux:spacer />
+                        <flux:modal.close>
+                            <flux:button variant="ghost">Cancelar</flux:button>
+                        </flux:modal.close>
+                        <flux:button type="submit" variant="primary">Guardar cambios</flux:button>
+                    </div>
+                </form>
+            </flux:modal>
+        @endcan
     @endif
 </div>
