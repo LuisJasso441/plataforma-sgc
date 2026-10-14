@@ -38,10 +38,20 @@
             </thead>
             <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
                 @forelse ($users as $user)
-                    <tr class="hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                        <td class="px-4 py-3">
-                            <div class="font-medium text-zinc-900 dark:text-zinc-100">{{ $user->name }}</div>
-                            <div class="text-zinc-500 text-xs">{{ $user->email }}</div>
+                    <tr wire:key="user-{{ $user->id }}" @class([
+                        'group transition-colors hover:bg-verden-green/5 dark:hover:bg-verden-mint/5',
+                        'opacity-60' => ! $user->active,
+                    ])>
+                        <td class="border-l-2 border-transparent px-4 py-3 transition-colors group-hover:border-accent">
+                            <div class="flex items-center gap-3">
+                                <span class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-xs font-semibold text-zinc-600 transition-colors group-hover:bg-accent group-hover:text-accent-foreground dark:bg-zinc-800 dark:text-zinc-300">
+                                    {{ $user->initials() }}
+                                </span>
+                                <div class="min-w-0">
+                                    <div class="truncate font-medium text-zinc-900 dark:text-zinc-100">{{ $user->name }}</div>
+                                    <div class="truncate text-xs text-zinc-500">{{ $user->email }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">{{ $user->username }}</td>
                         <td class="px-4 py-3">
@@ -53,8 +63,12 @@
                                 {{ $user->roleLabel() }}
                             </flux:badge>
                         </td>
-                        <td class="px-4 py-3 text-zinc-700 dark:text-zinc-300">
-                            {{ $user->department?->name ?? '—' }}
+                        <td class="px-4 py-3">
+                            @if ($user->department)
+                                <flux:badge size="sm" :color="$user->department->badgeColor()">{{ $user->department->name }}</flux:badge>
+                            @else
+                                <span class="text-zinc-500">—</span>
+                            @endif
                         </td>
                         <td class="px-4 py-3">
                             @if ($user->active)
