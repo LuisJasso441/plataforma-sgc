@@ -39,6 +39,8 @@ Route::middleware(['auth', 'module:no-conformidad'])
         Volt::route('{nonConformity}/editar', 'no-conformidad.form')->name('edit');
         Route::get('adjuntos/{attachment}', NcAttachmentController::class)
             ->name('attachments.download')->whereNumber('attachment');
+        Route::get('adjuntos/{attachment}/ver', [NcAttachmentController::class, 'preview'])
+            ->name('attachments.preview')->whereNumber('attachment');
         Route::get('{nonConformity}/reporte', NcReportDownloadController::class)
             ->name('report.download')->whereNumber('nonConformity');
         Volt::route('{nonConformity}/reporte/editar', 'no-conformidad.report-form')

@@ -52,23 +52,12 @@
     {{-- Evidencias (todas las versiones) --}}
     @if ($evidences->isNotEmpty())
         <div class="mt-3">
-            <div class="mb-1 text-xs font-medium text-zinc-500">Evidencias</div>
-            <ul class="divide-y divide-zinc-100 dark:divide-zinc-800">
+            <div class="mb-2 text-xs font-medium text-zinc-500">Evidencias ({{ $evidences->count() }})</div>
+            <div class="flex flex-wrap gap-3">
                 @foreach ($evidences as $evidence)
-                    <li class="flex flex-wrap items-center justify-between gap-2 py-1.5">
-                        <div class="flex min-w-0 items-center gap-2">
-                            <flux:icon.paper-clip class="size-4 shrink-0 text-zinc-400" />
-                            <a href="{{ route('no-conformidad.attachments.download', $evidence) }}"
-                                class="truncate text-sm text-sky-600 dark:text-sky-400 hover:underline">
-                                {{ $evidence->original_name }}
-                            </a>
-                        </div>
-                        <div class="text-xs text-zinc-500">
-                            {{ $evidence->uploader?->name }} · {{ $evidence->created_at->format('d/m/Y H:i') }} · {{ $evidence->humanSize() }}
-                        </div>
-                    </li>
+                    <x-nc.attachment-tile :attachment="$evidence" wire:key="evidencia-{{ $evidence->id }}" />
                 @endforeach
-            </ul>
+            </div>
         </div>
     @endif
 
