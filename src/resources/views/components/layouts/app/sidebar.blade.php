@@ -2,6 +2,7 @@
     $user = auth()->user();
     $userSubtitle = $user->roleLabel() . ($user->department ? ' · ' . $user->department->name : '');
     $unreadNotifications = $user->unreadNotifications()->count();
+    $pendingCount = $user->isAdmin() ? 0 : \App\Support\NcPendingTasks::count($user);
 
     // Módulos activos del SGA (cambian muy poco: caché de 10 minutos)
     $sidebarModules = \Illuminate\Support\Facades\Cache::remember('sidebar.modules', 600,
@@ -26,6 +27,13 @@
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         Inicio
                     </flux:navlist.item>
+
+                    @unless ($user->isAdmin())
+                        <flux:navlist.item icon="clipboard-document-check" :href="route('pendientes.index')"
+                            :current="request()->routeIs('pendientes.*')" :badge="$pendingCount ?: null" wire:navigate>
+                            Mis pendientes
+                        </flux:navlist.item>
+                    @endunless
 
                     <flux:navlist.item icon="bell" :href="route('notificaciones.index')" :current="request()->routeIs('notificaciones.*')"
                         :badge="$unreadNotifications ?: null" wire:navigate>

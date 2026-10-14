@@ -9,27 +9,24 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Support\Str;
 
 /**
- * Resumen diario de pendientes (acciones vencidas / próximas, verificaciones).
+ * Resumen diario: los mismos grupos que el usuario ve en "Mis pendientes".
  *
- * @param array<string, list<array{folio:string, department:string, detail:string, date:string, url:string}>> $sections
+ * @see \App\Support\NcPendingTasks::forDigest()
  */
 class NcDailyDigest extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public const SECTIONS = [
-        'vencidas'       => 'Acciones vencidas',
-        'proximas'       => 'Acciones que vencen en los próximos 3 días',
-        'verificaciones' => 'Verificaciones de efectividad pendientes',
-    ];
-
-    public function __construct(public array $sections)
+    /**
+     * @param list<array{title: string, items: list<array{folio: string, department: string, detail: string, due: ?string, note: ?string, url: string}>}> $groups
+     */
+    public function __construct(public array $groups)
     {
     }
 
     public function total(): int
     {
-        return array_sum(array_map('count', $this->sections));
+        return array_sum(array_map(fn (array $g) => count($g['items']), $this->groups));
     }
 
     public function via(object $notifiable): array
@@ -44,32 +41,37 @@ class NcDailyDigest extends Notification implements ShouldQueue
         $mail = (new MailMessage)
             ->subject("Resumen del día · {$total} " . ($total === 1 ? 'pendiente' : 'pendientes'))
             ->greeting('Hola, ' . Str::before($notifiable->name, ' '))
-            ->line('Estos son tus pendientes de No Conformidad para hoy:');
+            ->line('Esto es lo que tienes pendiente hoy en las No Conformidades:');
 
-        foreach (self::SECTIONS as $key => $label) {
-            if (empty($this->sections[$key])) {
-                continue;
-            }
+        foreach ($this->groups as $group) {
+            $mail->line('**' . $group['title'] . ' (' . count($group['items']) . ')**');
 
-            $mail->line("**{$label}**");
-            foreach ($this->sections[$key] as $item) {
-                $mail->line("• [{$item['folio']}]({$item['url']}) ({$item['department']}) — {$item['detail']} — {$item['date']}");
+            foreach ($group['items'] as $item) {
+                $line = "• [{$item['folio']}]({$item['url']}) ({$item['department']}) — {$item['detail']}";
+
+                if ($item['due']) {
+                    $line .= " — {$item['due']}";
+                }
+
+                if ($item['note']) {
+                    $line .= " — **{$item['note']}**";
+                }
+
+                $mail->line($line);
             }
         }
 
         return $mail
-            ->action('Ir a ' . config('app.name'), route('dashboard'))
+            ->action('Ver mis pendientes', route('pendientes.index'))
             ->salutation(config('app.name') . ' · Sistema de Gestión Ambiental');
     }
 
     public function toArray(object $notifiable): array
     {
-        $parts = [];
-        foreach (self::SECTIONS as $key => $label) {
-            if ($n = count($this->sections[$key] ?? [])) {
-                $parts[] = "{$label}: {$n}";
-            }
-        }
+        $parts = array_map(
+            fn (array $g) => $g['title'] . ': ' . count($g['items']),
+            $this->groups,
+        );
 
         return [
             'event'      => 'resumen_diario',
@@ -77,7 +79,7 @@ class NcDailyDigest extends Notification implements ShouldQueue
             'detail'     => implode(' · ', $parts),
             'folio'      => null,
             'department' => null,
-            'url'        => route('dashboard', [], false),
+            'url'        => route('pendientes.index', [], false),
         ];
     }
 }

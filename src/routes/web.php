@@ -19,6 +19,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 
     Volt::route('notificaciones', 'notificaciones.index')->name('notificaciones.index');
+
+    Volt::route('pendientes', 'pendientes.index')->name('pendientes.index');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
