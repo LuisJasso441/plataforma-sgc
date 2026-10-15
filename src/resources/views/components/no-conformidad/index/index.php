@@ -51,7 +51,11 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
 
         $ncs = NonConformity::query()
             ->visibleTo($user)
-            ->with(['process', 'subprocess', 'department', 'leader', 'issuer'])
+            ->with([
+                'process', 'subprocess', 'department', 'leader', 'issuer',
+                // Detalle desplegable (solo las 15 NC de la página)
+                'actions', 'affectedProcesses', 'acceptedBy', 'closedBy', 'parent', 'reopenings',
+            ])
             ->filter($this->filters())
             ->orderByDesc('folio_year')
             ->orderByDesc('created_at')
@@ -66,6 +70,8 @@ new #[Layout('components.layouts.app')] #[Title('No Conformidad')] class extends
             ->get();
 
         return [
+            // Cambia con filtros o página: reinicia los renglones desplegados
+            'tableKey'    => md5(json_encode([$this->filters(), $ncs->currentPage()])),
             'exportUrl'   => route('no-conformidad.bitacora.export', $this->filters()),
             'ncs'         => $ncs,
             'departments' => $departments,
