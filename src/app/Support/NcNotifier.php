@@ -45,14 +45,22 @@ class NcNotifier
 
         $nc = NonConformity::with(['leader', 'issuer'])->find($log->non_conformity_id);
 
-        $recipients = collect($roles)
-            ->flatMap(fn (string $role) => self::resolve($nc, $role, $log))
-            ->filter(fn (?User $u) => $u && $u->active && $u->id !== $log->user_id) // nunca a quien hizo la acción
-            ->unique('id')
-            ->values();
+        // Un envío por rol (el texto cambia según el destinatario); nadie recibe dos veces
+        // y nunca se avisa a quien hizo la acción
+        $notified = collect([$log->user_id]);
 
-        if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new NcActivity($nc, $log->eventLabel(), $log->comment, $log->event));
+        foreach ($roles as $role) {
+            $users = self::resolve($nc, $role, $log)
+                ->filter(fn (?User $u) => $u && $u->active && ! $notified->contains($u->id))
+                ->unique('id')
+                ->values();
+
+            if ($users->isEmpty()) {
+                continue;
+            }
+
+            $notified = $notified->merge($users->pluck('id'));
+            Notification::send($users, new NcActivity($nc, $log, $role));
         }
     }
 
